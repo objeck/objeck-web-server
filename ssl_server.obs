@@ -15,7 +15,7 @@ class SSLServer {
 					RequestHandler->New(true)->Execute(server->Accept());
 				};
 			};
-			"Goodbye!"->PrintLine();
+			"Goodbye..."->PrintLine();
 			server->Close();
 		};
 	}
