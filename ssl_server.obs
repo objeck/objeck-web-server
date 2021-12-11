@@ -122,7 +122,7 @@ class RequestHandler from Thread {
 				if(content_type <> Nil) {
 					# lock cache for while we search or insert content
 					critical(@content_mutex) {
-						path_name := ".";
+						path_name := "./html";
 						path_name += request_name;
 
 						# found in cache
