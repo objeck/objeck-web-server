@@ -70,7 +70,8 @@ class RequestHandler from Thread {
 
 		if(client <> Nil & client->IsOpen()) {
 			# process request
-			request_name : String;
+			request_verb : String;
+			request_url : String;
 
 			request := client->ReadLine();
 			if(@debug) {
@@ -80,50 +81,54 @@ class RequestHandler from Thread {
 			if(request->Size() > 0) {
 				request_parts := request->Split(" ");
 				if(request_parts->Size() = 3) {
-					request_name := request_parts[1];
+					request_verb := request_parts[0];
+					request_url := request_parts[1];
 				};
 			};
 
 			# get headers
 			headers := GetHeaders(client);
 
-			# retrieve content
-			if(request_name = Nil | request_name->Equals("/")) {
-				request_name := "/index.html";
-			};
+			if(request_verb->Equals("GET")) {
+				# retrieve content
+				if(request_url = Nil | request_url->Equals("/")) {
+					request_url := "/index.html";
+				};
 
-			# write response
-			content_header := "";
-			content := LoadContent(request_name, content_header);
-			if(content <> Nil) {
-				# defer to handler
-				client->WriteString("HTTP/1.1 200 OK\r\n{$content_header}\r\n");
-			}
-			else {
-				content := "<html><head><meta charset=\"utf-8\"></head><body><h1>Object not found!</h1></body></html>"->ToByteArray();
-				content_size := content->Size();
-				client->WriteString("HTTP/1.1 404 Not Found\r\nConnection: close\r\n{$content_header}\r\n");
-			};
+				# write response
+				content_header := "";
+				content := LoadContent(request_url, content_header);
+				if(content <> Nil) {
+					# defer to handler
+					client->WriteString("HTTP/1.1 200 OK\r\n{$content_header}\r\n");
+				}
+				else {
+					content := "<html><head><meta charset=\"utf-8\"></head><body><h1>Object not found!</h1></body></html>"->ToByteArray();
+					content_size := content->Size();
+					client->WriteString("HTTP/1.1 404 Not Found\r\nConnection: close\r\n{$content_header}\r\n");
+				};
 
-			client->WriteBuffer(content);
+				client->WriteBuffer(content);
+			};
+			
 			client->Close();
 		};
 	}
 
-	method : LoadContent(request_name : String, header : String) ~ Byte[] {
+	method : LoadContent(request_url : String, header : String) ~ Byte[] {
 		content : Byte[];
 
-		request_type_index := request_name->Find('.');
+		request_type_index := request_url->Find('.');
 		if(request_type_index > 0) {
 			# check the request type
-			request_type := request_name->SubString(request_type_index, request_name->Size() - request_type_index);
+			request_type := request_url->SubString(request_type_index, request_url->Size() - request_type_index);
 			if(request_type <> Nil) {
 				content_type := @content_type_cache->Find(request_type);
 				if(content_type <> Nil) {
 					# lock cache for while we search or insert content
 					critical(@content_mutex) {
 						path_name := "./html";
-						path_name += request_name;
+						path_name += request_url;
 
 						# found in cache
 						found := @content_cache->Find(path_name);

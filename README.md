@@ -1,9 +1,8 @@
 # Objeck Web Server
 
-TODO
+Minimal read-only HTTPS socket server
 
-## Documentation
-TODO
-
-## Design
-TODO
+Support for:
+* SSL ``GET`` requests
+* Content caching
+* Multi-threaded requests
