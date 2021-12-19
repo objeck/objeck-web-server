@@ -6,18 +6,27 @@ use System.IO.Net;
 Mini webserver
 ~#
 class SSLServer {
+	@server : static : TCPSecureSocketServer;
+	
 	function : Main(args : String[]) ~ Nil {
 		if(args->Size() = 3) {
 			RequestHandler->Init();
-			server := TCPSecureSocketServer->New(args[0], args[1], args[2], 1613);
-			if(server->Listen()) {
+			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
+			@server := TCPSecureSocketServer->New(args[0], args[1], args[2], 1613);
+			if(@server->Listen()) {
 				while(true) {
-					RequestHandler->New(true)->Execute(server->Accept());
+					RequestHandler->New(true)->Execute(@server->Accept());
+					Runtime->RaiseSignal(Runtime->Signal->SIGTERM);
 				};
 			};
-			"Goodbye..."->PrintLine();
-			server->Close();
 		};
+	}
+
+	function : Shutdown(id : Int) ~ Nil {
+		if(@server <> Nil) {
+			@server->Close();
+		};
+		"Goodbye..."->PrintLine();
 	}
 }
 
