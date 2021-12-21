@@ -97,8 +97,8 @@ class RequestHandler from Thread {
 
 			# get headers
 			headers := GetHeaders(client);
-
-			if(request_verb->Equals("GET")) {
+			
+			if(headers <> Nil & request_verb->Equals("GET")) {
 				# retrieve content
 				if(request_url = Nil | request_url->Equals("/")) {
 					request_url := "/index.html";
