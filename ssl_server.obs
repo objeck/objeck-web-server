@@ -16,7 +16,6 @@ class SSLServer {
 			if(@server->Listen()) {
 				while(true) {
 					RequestHandler->New(true)->Execute(@server->Accept());
-					Runtime->RaiseSignal(Runtime->Signal->SIGTERM);
 				};
 			};
 		};
