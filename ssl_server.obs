@@ -26,6 +26,7 @@ class SSLServer {
 			@server->Close();
 		};
 		"Goodbye..."->PrintLine();
+		Runtime->Exit(0);
 	}
 }
 
