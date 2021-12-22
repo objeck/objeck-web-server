@@ -14,6 +14,9 @@ class SSLServer {
 			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
 			@server := TCPSecureSocketServer->New(args[0], args[1], args[2], 1613);
 			if(@server->Listen()) {
+				platform := Runtime->GetPlatform();
+				host := TCPSocket->HostName();
+				"Server running on {$host} ({$platform})"->PrintLine();
 				while(true) {
 					RequestHandler->New(true)->Execute(@server->Accept());
 				};
