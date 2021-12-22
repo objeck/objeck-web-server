@@ -17,6 +17,7 @@ class SSLServer {
 				platform := Runtime->GetPlatform();
 				host := TCPSocket->HostName();
 				"Server running on {$host} ({$platform})"->PrintLine();
+				
 				while(true) {
 					RequestHandler->New(true)->Execute(@server->Accept());
 				};
