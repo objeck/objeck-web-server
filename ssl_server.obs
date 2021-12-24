@@ -10,7 +10,7 @@ class SSLServer {
 	
 	function : Main(args : String[]) ~ Nil {
         if(args->Size() > 1) {
-                port := 443;
+                port := 60013;
                 platform := Runtime->GetPlatform();
                 host := TCPSocket->HostName();
                 "Running on {$host} ({$platform}) port {$port}...\n---\n"->PrintLine();
@@ -67,6 +67,7 @@ class RequestHandler from Thread {
 		@content_type_cache->Insert(".png", "image/png");
 		@content_type_cache->Insert(".jpg", "image/jpeg");
 		@content_type_cache->Insert(".ico", "image/x-icon");
+        @content_type_cache->Insert(".js", "application/javascript");
 
 		@content_cache := Hash->New()<String, ByteArrayHolder>;
 		@content_mutex := ThreadMutex->New("_CONTENT_CACHE_");
@@ -141,7 +142,7 @@ class RequestHandler from Thread {
 	method : LoadContent(request_url : String, header : String) ~ Byte[] {
 		content : Byte[];
 
-		request_type_index := request_url->Find('.');
+		request_type_index := request_url->FindLast('.');
 		if(request_type_index > 0) {
 			# check the request type
 			request_type := request_url->SubString(request_type_index, request_url->Size() - request_type_index);
