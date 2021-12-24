@@ -13,7 +13,7 @@ class SSLServer {
                 port := 60013;
                 platform := Runtime->GetPlatform();
                 host := TCPSocket->HostName();
-                "Running on {$host} ({$platform}) port {$port}...\n---\n"->PrintLine();
+                "Running on {$host} ({$platform}) port {$port}..."->PrintLine();
 
                 RequestHandler->Init();
                 if(args->Size() = 3) {
@@ -26,11 +26,13 @@ class SSLServer {
                 Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
                 if(@server->Listen()) {
                         while(true) {
-                                RequestHandler->New(true)->Execute(@server->Accept());
+                                RequestHandler->New(false)->Execute(@server->Accept());
                         };
                 }
                 else {
-                        @server->GetLastError()->ErrorLine();
+                        # TODO: log errors
+                        err_msg := @server->GetLastError();
+                        "Error: '{$err_msg}'"->ErrorLine();
                 };
         };
   	}
@@ -39,7 +41,7 @@ class SSLServer {
 		if(@server <> Nil) {
 			@server->Close();
 		};
-		"Goodbye..."->PrintLine();
+		"Shutting down..."->PrintLine();
 		Runtime->Exit(0);
 	}
 }
