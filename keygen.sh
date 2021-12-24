@@ -8,5 +8,5 @@ openssl req -out cert.csr -key local.encrypted.key -new
 mv local.encrypted.key cert.key
 rm local.crt local.key
 chmod 600 cert.key
-sudo cp cert.crt /usr/local/share/ca-certificates/extra
+sudo cp cert.crt /usr/local/share/ca-certificates
 sudo update-ca-certificates
