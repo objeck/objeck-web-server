@@ -9,32 +9,27 @@ class SSLServer {
 	@server : static : TCPSecureSocketServer;
 	
 	function : Main(args : String[]) ~ Nil {
-        if(args->Size() > 1) {
-                port := 60013;
-                platform := Runtime->GetPlatform();
-                host := TCPSocket->HostName();
-                "Running on {$host} ({$platform}) port {$port}..."->PrintLine();
+		if(args->Size() = 3) {
+			port := 60013;
+			platform := Runtime->GetPlatform();
+			host := TCPSocket->HostName();
 
-                RequestHandler->Init();
-                if(args->Size() = 3) {
-                        @server := TCPSecureSocketServer->New(args[0], args[1], args[2], port);
-                }
-                else if(args->Size() = 2) {
-                        @server := TCPSecureSocketServer->New(args[0], args[1], Nil->As(String), port);
-                };
+			RequestHandler->Init();
+			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
+			@server := TCPSecureSocketServer->New(args[0], args[1], args[2], port);
 
-                Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
-                if(@server->Listen()) {
-                        while(true) {
-                                RequestHandler->New(false)->Execute(@server->Accept());
-                        };
-                }
-                else {
-                        # TODO: log errors
-                        err_msg := @server->GetLastError();
-                        "Error: '{$err_msg}'"->ErrorLine();
-                };
-        };
+			if(@server->Listen()) {
+			 	"Running on {$host} ({$platform}) port {$port}..."->PrintLine();
+				while(true) {
+					RequestHandler->New(false)->Execute(@server->Accept());
+				};
+			}
+			else {
+				# TODO: log errors
+				err_msg := @server->GetLastError();
+				"Error: '{$err_msg}'"->ErrorLine();
+			};
+		};
   	}
 
 	function : Shutdown(id : Int) ~ Nil {
@@ -50,7 +45,7 @@ class SSLServer {
 Request handler
 ~#
 class RequestHandler from Thread {
-	@content_cache : static : Hash<String, ByteArrayHolder>;
+	@content_cache : static : Cache<String, ByteArrayHolder>;
 	@content_type_cache : static : Hash<String, String>; # TODO: LRU cache
 	@content_mutex : static : ThreadMutex;
 	@debug : Bool;
@@ -71,8 +66,8 @@ class RequestHandler from Thread {
 		@content_type_cache->Insert(".ico", "image/x-icon");
 		@content_type_cache->Insert(".js", "application/javascript");
 
-		@content_cache := Hash->New()<String, ByteArrayHolder>;
-		@content_mutex := ThreadMutex->New("_CONTENT_CACHE_");
+		@content_cache := Cache->New(Cache->Type->MRU, 16)<String, ByteArrayHolder>;
+		@content_mutex := ThreadMutex->New("__content_cache__");
 	}
 
 	method : public : GetHeaders(client : TCPSecureSocket) ~ Map<String, String> {
