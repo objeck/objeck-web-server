@@ -1,3 +1,4 @@
+# change localhost to server address and ip
 rm -f local.* *.pem *.crt
 openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
   -keyout local.key -out local.crt -subj "/CN=localhost" \
