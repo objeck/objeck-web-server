@@ -21,7 +21,7 @@ class SSLServer {
 			if(@server->Listen()) {
 			 	"Running on {$host} ({$platform}) port {$port}..."->PrintLine();
 				while(true) {
-					RequestHandler->New(false)->Execute(@server->Accept());
+					RequestHandler->New(true)->Execute(@server->Accept());
 				};
 			}
 			else {
