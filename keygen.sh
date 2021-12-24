@@ -4,9 +4,9 @@ openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
   -addext "subjectAltName=DNS:localhost,DNS:www.local.net,IP:127.0.0.1"
 openssl x509 -in local.crt -out cert.crt
 openssl rsa -aes256 -in local.key -out local.encrypted.key
+openssl req -out cert.csr -key local.encrypted.key -new
 mv local.encrypted.key cert.key
 rm local.crt local.key
 chmod 600 cert.key
 sudo cp cert.crt /usr/local/share/ca-certificates/extra
-sudo cp cert.key /usr/local/share/ca-certificates/extra
 sudo update-ca-certificates

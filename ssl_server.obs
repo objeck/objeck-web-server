@@ -9,22 +9,31 @@ class SSLServer {
 	@server : static : TCPSecureSocketServer;
 	
 	function : Main(args : String[]) ~ Nil {
-		if(args->Size() = 3) {
-			RequestHandler->Init();
-			port := 60013;
-			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
-			@server := TCPSecureSocketServer->New(args[0], args[1], args[2], port);
-			if(@server->Listen()) {
-				platform := Runtime->GetPlatform();
-				host := TCPSocket->HostName();
-				"Running on {$host} ({$platform}) port {$port}...\n---\n"->PrintLine();
+        if(args->Size() > 1) {
+                port := 443;
+                platform := Runtime->GetPlatform();
+                host := TCPSocket->HostName();
+                "Running on {$host} ({$platform}) port {$port}...\n---\n"->PrintLine();
 
-				while(true) {
-					RequestHandler->New(true)->Execute(@server->Accept());
-				};
-			};
-		};
-	}
+                RequestHandler->Init();
+                if(args->Size() = 3) {
+                        @server := TCPSecureSocketServer->New(args[0], args[1], args[2], port);
+                }
+                else if(args->Size() = 2) {
+                        @server := TCPSecureSocketServer->New(args[0], args[1], Nil->As(String), port);
+                };
+
+                Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
+                if(@server->Listen()) {
+                        while(true) {
+                                RequestHandler->New(true)->Execute(@server->Accept());
+                        };
+                }
+                else {
+                        @server->GetLastError()->ErrorLine();
+                };
+        };
+  	}
 
 	function : Shutdown(id : Int) ~ Nil {
 		if(@server <> Nil) {
