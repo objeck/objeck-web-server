@@ -51,7 +51,7 @@ Request handler
 ~#
 class RequestHandler from Thread {
 	@content_cache : static : Hash<String, ByteArrayHolder>;
-	@content_type_cache : static : Hash<String, String>;
+	@content_type_cache : static : Hash<String, String>; # TODO: LRU cache
 	@content_mutex : static : ThreadMutex;
 	@debug : Bool;
 
@@ -69,7 +69,7 @@ class RequestHandler from Thread {
 		@content_type_cache->Insert(".png", "image/png");
 		@content_type_cache->Insert(".jpg", "image/jpeg");
 		@content_type_cache->Insert(".ico", "image/x-icon");
-        @content_type_cache->Insert(".js", "application/javascript");
+		@content_type_cache->Insert(".js", "application/javascript");
 
 		@content_cache := Hash->New()<String, ByteArrayHolder>;
 		@content_mutex := ThreadMutex->New("_CONTENT_CACHE_");
@@ -145,7 +145,7 @@ class RequestHandler from Thread {
 		content : Byte[];
 
 		request_type_index := request_url->FindLast('.');
-		if(request_type_index > 0) {
+		if(request_type_index > 0 & <>request_url->Has("..")) {
 			# check the request type
 			request_type := request_url->SubString(request_type_index, request_url->Size() - request_type_index);
 			if(request_type <> Nil) {
