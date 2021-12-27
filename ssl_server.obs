@@ -9,14 +9,18 @@ class SSLServer {
 	@server : static : TCPSecureSocketServer;
 	
 	function : Main(args : String[]) ~ Nil {
-		if(args->Size() = 3) {
-			port := 60013;
+		if(args->Size() = 4) {
+			cert := args[0];
+			cert_key := args[1];
+			cert_key_passwd := args[2];
+			port := args[3]->ToInt();
+
 			platform := Runtime->GetPlatform();
 			host := TCPSocket->HostName();
 
 			RequestHandler->Init();
 			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
-			@server := TCPSecureSocketServer->New(args[0], args[1], args[2], port);
+			@server := TCPSecureSocketServer->New(cert, cert_key, cert_key_passwd, port);
 
 			if(@server->Listen()) {
 			 	"Running on {$host} ({$platform}) port {$port}..."->PrintLine();
@@ -46,7 +50,7 @@ Request handler
 ~#
 class RequestHandler from Thread {
 	@content_cache : static : Cache<String, ByteArrayHolder>;
-	@content_type_cache : static : Hash<String, String>; # TODO: LRU cache
+	@content_type_cache : static : Hash<String, String>;
 	@content_mutex : static : ThreadMutex;
 	@debug : Bool;
 
