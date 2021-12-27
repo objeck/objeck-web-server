@@ -70,22 +70,6 @@ class RequestHandler from Thread {
 		@content_mutex := ThreadMutex->New("__content_cache__");
 	}
 
-	method : public : GetHeaders(client : TCPSecureSocket) ~ Map<String, String> {
-		headers := Map->New()<String, String>;
-
-		header := client->ReadLine();
-		while(header->Size() > 0) {
-			header_parts := header->Split(" ");
-			if(header_parts->Size() = 2) {
-				headers->Insert(header_parts[0], header_parts[1]);
-			};
-
-			header := client->ReadLine();
-		};
-
-		return headers;
-	}
-
 	method : public : Run(param : Base) ~ Nil {
 		client := param->As(TCPSecureSocket);
 
@@ -112,7 +96,7 @@ class RequestHandler from Thread {
 			
 			if(headers <> Nil & request_verb->Equals("GET")) {
 				# retrieve content
-				if(request_url = Nil | request_url->Equals("/")) {
+				if(request_url = Nil | request_url->Equals("/") | request_url->Has("..")) {
 					request_url := "/index.html";
 				};
 
@@ -120,27 +104,53 @@ class RequestHandler from Thread {
 				content_header := "";
 				content := LoadContent(request_url, content_header);
 				if(content <> Nil) {
-					# defer to handler
-					client->WriteString("HTTP/1.1 200 OK\r\n{$content_header}\r\n");
+					Write200(content, content_header, client);
 				}
 				else {
-					content := "<html><head><meta charset=\"utf-8\"></head><body><h1>Object not found!</h1></body></html>"->ToByteArray();
-					content_size := content->Size();
-					client->WriteString("HTTP/1.1 404 Not Found\r\nConnection: close\r\n{$content_header}\r\n");
+					Write302(client);
 				};
-
-				client->WriteBuffer(content);
 			};
 			
 			client->Close();
 		};
 	}
 
+	method : Write200(content : Byte[], content_header : String, client : TCPSecureSocket) ~ Nil {
+		client->WriteString("HTTP/1.1 200 OK\r\n{$content_header}\r\n");
+		client->WriteBuffer(content);
+	}
+
+	method : Write302(client : TCPSecureSocket) ~ Nil {
+		content := "<html><head><meta charset=\"utf-8\"></head><body><h1>Object not found!</h1></body></html>"->ToByteArray();
+		content_size := content->Size();
+		client->WriteString("HTTP/1.1 302 Found\r\nLocation: /index.html\r\nConnection: close\r\n\r\n");
+	}
+
+	method : public : GetHeaders(client : TCPSecureSocket) ~ Map<String, String> {
+		headers := Map->New()<String, String>;
+		
+		header := client->ReadLine();
+		while(header <> Nil & header->Size() > 0) {
+			if(@debug) {
+				"header='{$header}'"->PrintLine();
+			};
+
+			header_parts := header->Split(" ");
+			if(header_parts->Size() = 2) {
+				headers->Insert(header_parts[0], header_parts[1]);
+			};
+
+			header := client->ReadLine();
+		};
+
+		return headers;
+	}
+
 	method : LoadContent(request_url : String, header : String) ~ Byte[] {
 		content : Byte[];
 
 		request_type_index := request_url->FindLast('.');
-		if(request_type_index > 0 & <>request_url->Has("..")) {
+		if(request_type_index > 0) {
 			# check the request type
 			request_type := request_url->SubString(request_type_index, request_url->Size() - request_type_index);
 			if(request_type <> Nil) {
