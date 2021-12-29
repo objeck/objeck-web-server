@@ -17,7 +17,7 @@ class SSLServer {
 
 			platform := Runtime->GetPlatform();
 			host := TCPSocket->HostName();
-
+			
 			RequestHandler->Init();
 			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
 			@server := TCPSecureSocketServer->New(cert, cert_key, cert_key_passwd, port);
@@ -78,15 +78,14 @@ class RequestHandler from Thread {
 		client := param->As(TCPSecureSocket);
 
 		if(client <> Nil & client->IsOpen()) {
-			# process request
-			request_verb : String;
-			request_url : String;
-
+			# get request
 			request := client->ReadLine();
 			if(@debug) {
 				"Request: '{$request}'"->PrintLine();
 			};
 
+			# parse request
+			request_verb : String; request_url : String;
 			if(request->Size() > 0) {
 				request_parts := request->Split(" ");
 				if(request_parts->Size() = 3) {
@@ -95,20 +94,21 @@ class RequestHandler from Thread {
 				};
 			};
 
-			# get headers
-			headers := GetHeaders(client);
-			
-			if(headers <> Nil & request_verb->Equals("GET")) {
+			# verify GET request
+			if(request_verb <> Nil & request_verb->Equals("GET") & request_url <> Nil & <>request_url->IsEmpty()) {
+				# get headers
+				headers := GetHeaders(client);
+
 				# retrieve content
 				if(request_url = Nil | request_url->Equals("/") | request_url->Has("..")) {
 					request_url := "/index.html";
 				};
 
 				# write response
-				content_header := "";
-				content := LoadContent(request_url, content_header);
+				type_header := "";
+				content := LoadContent(type_header, request_url);
 				if(content <> Nil) {
-					Write200(content, content_header, client);
+					Write200(type_header, content, client);
 				}
 				else {
 					Write302(client);
@@ -119,14 +119,12 @@ class RequestHandler from Thread {
 		};
 	}
 
-	method : Write200(content : Byte[], content_header : String, client : TCPSecureSocket) ~ Nil {
-		client->WriteString("HTTP/1.1 200 OK\r\n{$content_header}\r\n");
+	method : Write200(type_header : String, content : Byte[], client : TCPSecureSocket) ~ Nil {
+		client->WriteString("HTTP/1.1 200 OK\r\n{$type_header}\r\n");
 		client->WriteBuffer(content);
 	}
 
 	method : Write302(client : TCPSecureSocket) ~ Nil {
-		content := "<html><head><meta charset=\"utf-8\"></head><body><h1>Object not found!</h1></body></html>"->ToByteArray();
-		content_size := content->Size();
 		client->WriteString("HTTP/1.1 302 Found\r\nLocation: /index.html\r\nConnection: close\r\n\r\n");
 	}
 
@@ -135,10 +133,6 @@ class RequestHandler from Thread {
 		
 		header := client->ReadLine();
 		while(header <> Nil & header->Size() > 0) {
-#			if(@debug) {
-#				"header='{$header}'"->PrintLine();
-#			};
-
 			header_parts := header->Split(": ");
 			if(header_parts->Size() = 2) {
 				headers->Insert(header_parts[0], header_parts[1]);
@@ -150,7 +144,7 @@ class RequestHandler from Thread {
 		return headers;
 	}
 
-	method : LoadContent(request_url : String, header : String) ~ Byte[] {
+	method : LoadContent(type_header : String, request_url : String) ~ Byte[] {
 		content : Byte[];
 
 		request_type_index := request_url->FindLast('.');
@@ -160,11 +154,11 @@ class RequestHandler from Thread {
 			if(request_type <> Nil) {
 				content_type := @content_type_cache->Find(request_type);
 				if(content_type <> Nil) {
+					path_name := "./html";
+					path_name += request_url;
+
 					# lock cache for while we search or insert content
 					critical(@content_mutex) {
-						path_name := "./html";
-						path_name += request_url;
-
 						# found in cache
 						found := @content_cache->Find(path_name);
 						if(found <> Nil) {
@@ -177,11 +171,11 @@ class RequestHandler from Thread {
 								@content_cache->Insert(path_name, ByteArrayHolder->New(content));
 							};
 						};
+					};
 
-						if(content <> Nil) {
-							content_size := content->Size();
-							header += "Content-type: {$content_type}\r\nContent-Length: {$content_size}\r\nAccept-Ranges: bytes\r\nConnection: close\r\n";
-						};
+					if(content <> Nil) {
+						content_size := content->Size();
+						type_header += "Content-type: {$content_type}\r\nContent-Length: {$content_size}\r\nAccept-Ranges: bytes\r\nConnection: close\r\n";
 					};
 				};
 			};
