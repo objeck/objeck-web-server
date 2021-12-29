@@ -3,7 +3,7 @@ use Collection.Generic;
 use System.IO.Net;
 
 #~
-Mini webserver
+Mini web server
 ~#
 class SSLServer {
 	@server : static : TCPSecureSocketServer;
@@ -81,7 +81,8 @@ class RequestHandler from Thread {
 			# get request
 			request := client->ReadLine();
 			if(@debug) {
-				"Request: '{$request}'"->PrintLine();
+				address := client->GetAddress();
+				"Request: '{$request}' from '{$address}'"->PrintLine();
 			};
 
 			# parse request
@@ -96,8 +97,8 @@ class RequestHandler from Thread {
 
 			# verify GET request
 			if(request_verb <> Nil & request_verb->Equals("GET") & request_url <> Nil & <>request_url->IsEmpty()) {
-				# get headers
-				headers := GetHeaders(client);
+				# get request headers
+				request_headers := GetHeaders(client);
 
 				# retrieve content
 				if(request_url = Nil | request_url->Equals("/") | request_url->Has("..")) {
@@ -105,10 +106,10 @@ class RequestHandler from Thread {
 				};
 
 				# write response
-				type_header := "";
-				content := LoadContent(type_header, request_url);
+				response_header := "";
+				content := LoadContent(request_url, request_headers, response_header);
 				if(content <> Nil) {
-					Write200(type_header, content, client);
+					Write200(response_header, content, client);
 				}
 				else {
 					Write302(client);
@@ -119,8 +120,8 @@ class RequestHandler from Thread {
 		};
 	}
 
-	method : Write200(type_header : String, content : Byte[], client : TCPSecureSocket) ~ Nil {
-		client->WriteString("HTTP/1.1 200 OK\r\n{$type_header}\r\n");
+	method : Write200(response_header : String, content : Byte[], client : TCPSecureSocket) ~ Nil {
+		client->WriteString("HTTP/1.1 200 OK\r\n{$response_header}\r\n");
 		client->WriteBuffer(content);
 	}
 
@@ -144,7 +145,7 @@ class RequestHandler from Thread {
 		return headers;
 	}
 
-	method : LoadContent(type_header : String, request_url : String) ~ Byte[] {
+	method : LoadContent(request_url : String, request_headers : Map<String, String>, response_header : String) ~ Byte[] {
 		content : Byte[];
 
 		request_type_index := request_url->FindLast('.');
@@ -175,7 +176,8 @@ class RequestHandler from Thread {
 
 					if(content <> Nil) {
 						content_size := content->Size();
-						type_header += "Content-type: {$content_type}\r\nContent-Length: {$content_size}\r\nAccept-Ranges: bytes\r\nConnection: close\r\n";
+						response_header += "Content-type: {$content_type}\r\nContent-Length: {$content_size}\r\n";
+						response_header += "Accept-Ranges: bytes\r\nConnection: close\r\n";
 					};
 				};
 			};
