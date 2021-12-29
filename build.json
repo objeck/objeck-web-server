@@ -1,0 +1,10 @@
+{
+	"files": [
+		"ssl_server.obs"
+	],
+	"libs": [
+		"gen_collect.obl",
+		"net.obl"
+	],
+	"flags": ""
+}
