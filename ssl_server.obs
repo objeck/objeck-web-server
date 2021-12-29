@@ -81,8 +81,8 @@ class RequestHandler from Thread {
 			# get request
 			request := client->ReadLine();
 			if(@debug) {
-				address := client->GetAddress();
-				"Request: '{$request}' from '{$address}'"->PrintLine();
+				request_address := client->GetAddress();
+				"Request: '{$request}' from '{$request_address}'"->PrintLine();
 			};
 
 			# parse request
