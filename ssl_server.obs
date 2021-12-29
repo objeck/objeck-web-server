@@ -95,24 +95,32 @@ class RequestHandler from Thread {
 				};
 			};
 
-			# verify GET request
-			if(request_verb <> Nil & request_verb->Equals("GET") & request_url <> Nil & <>request_url->IsEmpty()) {
+			# verify request
+			if(request_verb <> Nil & request_url <> Nil & <>request_url->IsEmpty()) {
 				# get request headers
 				request_headers := GetHeaders(client);
 
-				# retrieve content
-				if(request_url = Nil | request_url->Equals("/") | request_url->Has("..")) {
-					request_url := "/index.html";
-				};
+				# GET request
+				if(request_verb->Equals("GET")) {
 
-				# write response
-				response_header := "";
-				content := LoadContent(request_url, request_headers, response_header);
-				if(content <> Nil) {
-					Write200(response_header, content, client);
+					# retrieve content
+					if(request_url = Nil | request_url->Equals("/") | request_url->Has("..")) {
+						request_url := "/index.html";
+					};
+
+					# write response
+					response_header := "";
+					content := LoadContent(request_url, request_headers, response_header);
+					if(content <> Nil) {
+						Write200(response_header, content, client);
+					}
+					else {
+						Write302(client);
+					};
 				}
-				else {
-					Write302(client);
+				# POST request
+				else if(request_verb->Equals("POST")) {
+
 				};
 			};
 			
