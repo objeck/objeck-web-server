@@ -61,20 +61,7 @@ class RequestHandler from Thread {
 		@debug := debug;
 	}
 
-	function : Init() ~ Nil {
-		# MIME type mapping
-		@content_type_cache := Hash->New()<String, String>;
-		@content_type_cache->Insert(".html", "text/html");
-		@content_type_cache->Insert(".htm", "text/html");
-		@content_type_cache->Insert(".css", "text/css");
-		@content_type_cache->Insert(".png", "image/png");
-		@content_type_cache->Insert(".jpg", "image/jpeg");
-		@content_type_cache->Insert(".ico", "image/x-icon");
-		@content_type_cache->Insert(".js", "application/javascript");
-
-		@content_cache := Cache->New(Cache->Type->MRU, 16)<String, ByteArrayHolder>;
-		@content_mutex := ThreadMutex->New("__content_cache__");
-	}
+	
 
 	method : public : Run(param : Base) ~ Nil {
 		@client := param->As(TCPSecureSocket);
@@ -178,13 +165,28 @@ class RequestHandler from Thread {
 My handler
 ~#
 class Foo from RequestHandler {
+	function : Init() ~ Nil {
+		# MIME type mapping
+		@content_type_cache := Hash->New()<String, String>;
+		@content_type_cache->Insert(".html", "text/html");
+		@content_type_cache->Insert(".htm", "text/html");
+		@content_type_cache->Insert(".css", "text/css");
+		@content_type_cache->Insert(".png", "image/png");
+		@content_type_cache->Insert(".jpg", "image/jpeg");
+		@content_type_cache->Insert(".ico", "image/x-icon");
+		@content_type_cache->Insert(".js", "application/javascript");
+
+		@content_cache := Cache->New(Cache->Type->MRU, 16)<String, ByteArrayHolder>;
+		@content_mutex := ThreadMutex->New("__content_cache__");
+	}
+
 	New(debug : Bool) {
 		Parent(debug);
 	}
 
 	method : ProcessGet(request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Byte[] {
 		content : Byte[];
-		
+
 		request_type_index := request_url->FindLast('.');
 		if(request_type_index > 0) {
 			# check the request type
@@ -217,7 +219,7 @@ if(@content_type_cache = Nil) {
 					};
 
 					if(content <> Nil) {
-						response_header += "Content-type: {$content_type}\r\n";
+						response_headers->Insert("Content-type", "{$content_type}");
 					};
 				};
 			};
