@@ -18,14 +18,14 @@ class SSLServer {
 			platform := Runtime->GetPlatform();
 			host := TCPSocket->HostName();
 			
-			RequestHandler->Init();
+			Foo->Init();
 			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
 			@server := TCPSecureSocketServer->New(cert, cert_key, cert_key_passwd, port);
 
 			if(@server->Listen()) {
 			 	"Running on {$host} ({$platform}) port {$port}..."->PrintLine();
 				while(true) {
-					RequestHandler->New(true)->Execute(@server->Accept());
+					Foo->New(true)->Execute(@server->Accept());
 				};
 			}
 			else {
@@ -111,9 +111,20 @@ class RequestHandler from Thread {
 					};
 
 					# write response
-					response_header := "";
-					content := LoadContent(request_url, request_headers, response_header);
+					response_headers := Map->New()<String, String>;
+					content := ProcessGet(request_url, request_headers, response_headers);
 					if(content <> Nil) {
+						response_header := "";
+						key_values := response_headers->GetKeyValues()<Pair<String, String>>;
+						each(i : key_values) {
+							key_value := key_values->Get(i);
+							key := key_value->GetFirst();
+							value := key_value->GetSecond();
+							response_header += "{$key}: {$value}\r\n";
+						};
+
+						content_size := content->Size();
+						response_header += "Content-Length: {$content_size}\r\nAccept-Ranges: bytes\r\nConnection: close\r\n";
 						@client->WriteString("HTTP/1.1 200 OK\r\n{$response_header}\r\n");
 						@client->WriteBuffer(content);
 					}
@@ -127,9 +138,12 @@ class RequestHandler from Thread {
 					if(content_length <> Nil) {
 						buffer := Byte->New[content_length->ToInt()];
 						@client->ReadBuffer(0, buffer->Size(), buffer);
-						content := String->New(buffer);
-content->PrintLine();
-						@client->WriteString("HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n");
+						if(ProcessPost(buffer)) {
+							@client->WriteString("HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n");
+						}
+						else {
+
+						};
 					};
 				};
 			};
@@ -137,21 +151,13 @@ content->PrintLine();
 			@client->Close();
 		};
 	}
-
-	method : Write200(response_header : String, content : Byte[]) ~ Nil {
-		
-	}
-
-	method : Write302() ~ Nil {
-		
-	}
-
+	
 	method : public : GetHeaders() ~ Map<String, String> {
 		headers := Map->New()<String, String>;
 		
 		header := @client->ReadLine();
 		while(header <> Nil & header->Size() > 0) {
-# "header: {$header}"->PrintLine();			
+			# "header: {$header}"->PrintLine();			
 			header_parts := header->Split(": ");
 			if(header_parts->Size() = 2) {
 				headers->Insert(header_parts[0], header_parts[1]);
@@ -163,14 +169,32 @@ content->PrintLine();
 		return headers;
 	}
 
-	method : LoadContent(request_url : String, request_headers : Map<String, String>, response_header : String) ~ Byte[] {
-		content : Byte[];
+	method : virtual : ProcessGet(request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Byte[];
 
+	method : virtual : ProcessPost(buffer : Byte[]) ~ Bool;
+}
+
+#~
+My handler
+~#
+class Foo from RequestHandler {
+	New(debug : Bool) {
+		Parent(debug);
+	}
+
+	method : ProcessGet(request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Byte[] {
+		content : Byte[];
+		
 		request_type_index := request_url->FindLast('.');
 		if(request_type_index > 0) {
 			# check the request type
 			request_type := request_url->SubString(request_type_index, request_url->Size() - request_type_index);
 			if(request_type <> Nil) {
+
+if(@content_type_cache = Nil) {
+	"--- IsNil ---"->PrintLine();
+};
+
 				content_type := @content_type_cache->Find(request_type);
 				if(content_type <> Nil) {
 					path_name := "./html";
@@ -193,14 +217,18 @@ content->PrintLine();
 					};
 
 					if(content <> Nil) {
-						content_size := content->Size();
-						response_header += "Content-type: {$content_type}\r\nContent-Length: {$content_size}\r\n";
-						response_header += "Accept-Ranges: bytes\r\nConnection: close\r\n";
+						response_header += "Content-type: {$content_type}\r\n";
 					};
 				};
 			};
 		};
 
 		return content;
+	}
+
+	method : ProcessPost(buffer : Byte[]) ~ Bool {
+		content := String->New(buffer);
+		content->PrintLine();
+		return true;
 	}
 }
