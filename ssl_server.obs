@@ -18,14 +18,14 @@ class SSLServer {
 			platform := Runtime->GetPlatform();
 			host := TCPSocket->HostName();
 			
-			Foo->Init();
+			MyHandler->Init();
 			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
 			@server := TCPSecureSocketServer->New(cert, cert_key, cert_key_passwd, port);
 
 			if(@server->Listen()) {
 			 	"Running on {$host} ({$platform}) port {$port}..."->PrintLine();
 				while(true) {
-					Foo->New(true)->Execute(@server->Accept());
+					MyHandler->New(true)->Execute(@server->Accept());
 				};
 			}
 			else {
@@ -49,10 +49,6 @@ class SSLServer {
 Request handler
 ~#
 class RequestHandler from Thread {
-	@content_cache : static : Cache<String, ByteArrayHolder>;
-	@content_type_cache : static : Hash<String, String>;
-	@content_mutex : static : ThreadMutex;
-
 	@client : TCPSecureSocket;
 	@debug : Bool;
 
@@ -164,7 +160,11 @@ class RequestHandler from Thread {
 #~
 My handler
 ~#
-class Foo from RequestHandler {
+class MyHandler from RequestHandler {
+	@content_cache : static : Cache<String, ByteArrayHolder>;
+	@content_type_cache : static : Hash<String, String>;
+	@content_mutex : static : ThreadMutex;
+	
 	function : Init() ~ Nil {
 		# MIME type mapping
 		@content_type_cache := Hash->New()<String, String>;
@@ -192,11 +192,6 @@ class Foo from RequestHandler {
 			# check the request type
 			request_type := request_url->SubString(request_type_index, request_url->Size() - request_type_index);
 			if(request_type <> Nil) {
-
-if(@content_type_cache = Nil) {
-	"--- IsNil ---"->PrintLine();
-};
-
 				content_type := @content_type_cache->Find(request_type);
 				if(content_type <> Nil) {
 					path_name := "./html";
