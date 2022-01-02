@@ -3,22 +3,9 @@ use Collection.Generic;
 use System.IO.Net;
 
 #~
-Mini web server
+Mini web server test
 ~#
-class SSLServer {
-	@server : static : TCPSecureSocketServer;
-	@cert : String;
-	@cert_key : String;
-	@cert_key_passwd : String;
-	@port : Int;
-
-	New(cert : String, cert_key : String, cert_key_passwd : String, port : Int) {
-		@cert := cert;
-		@cert_key := cert_key;
-		@cert_key_passwd := cert_key_passwd;
-		@port := port;
-	}
-	
+class Test {
 	function : Main(args : String[]) ~ Nil {
 		if(args->Size() = 4) {
 			cert := args[0];
@@ -27,21 +14,37 @@ class SSLServer {
 			port := args[3]->ToInt();
 
 			MyHandler->Init();			
-			SSLServer->New(cert, cert_key, cert_key_passwd, port)->Serve();
+			HttpServer->ServeSecure(MyHandler->New()->GetClass(), port, cert, cert_key, cert_key_passwd);
 		};
-  	}
+	}
+}
 
-  	method : public : Serve() ~ Nil {
-		@server := TCPSecureSocketServer->New(@cert, @cert_key, @cert_key_passwd, @port);
+#~
+HTTP and HTTPs server
+~#
+class HttpServer {
+	@server : static : TCPSecureSocketServer;
+
+	#~
+	Starts a HTTPS server that listens for requests
+	@param callback class instantiated to server requests
+	@param port server port
+	@param cert SSL certificate
+	@param cert_key SSL certificate key
+	@param cert_key_passwd SSL certificate password
+	~#
+	function : ServeSecure(callback : Class, port : Int, cert : String, cert_key : String, cert_key_passwd : String) ~ Nil {
+		@server := TCPSecureSocketServer->New(cert, cert_key, cert_key_passwd, port);
 
   		Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
 		if(@server->Listen()) {
 			platform := Runtime->GetPlatform();
 			host := TCPSocket->HostName();
 
-		 	"Running on {$host} ({$platform}) port {$@port}..."->PrintLine();
+		 	"Running on {$host} ({$platform}) port {$port}..."->PrintLine();
 			while(true) {
-				MyHandler->New(true)->Execute(@server->Accept());
+				handler := callback->Instance(callback->GetName())->As(HttpRequestHandler);
+				handler->Execute(@server->Accept());
 			};
 		}
 		else {
@@ -49,6 +52,14 @@ class SSLServer {
 			err_msg := @server->GetLastError();
 			"Error: '{$err_msg}'"->ErrorLine();
 		};
+  	}
+
+  	#~
+	Starts a HTTP server that listens for requests
+	@param callback class instantiated to server requests
+	@param port server port
+	~#
+  	function : Serve(callback : Class, port : Int) ~ Nil {
   	}
 
 	function : Shutdown(id : Int) ~ Nil {
@@ -61,18 +72,16 @@ class SSLServer {
 }
 
 #~
-Request handler
+Request handler for GET and POST requests
 ~#
-class RequestHandler from Thread {
+class HttpRequestHandler from Thread {
 	@client : TCPSecureSocket;
 	@debug : Bool;
 
-	New(debug : Bool) {
+	New() {
 		Parent();		
-		@debug := debug;
+		@debug := true;
 	}
-
-	
 
 	method : public : Run(param : Base) ~ Nil {
 		@client := param->As(TCPSecureSocket);
@@ -150,6 +159,10 @@ class RequestHandler from Thread {
 		};
 	}
 	
+	#~
+	Get HTTP headers
+	@return HTTP headers
+	~#
 	method : public : GetHeaders() ~ Map<String, String> {
 		headers := Map->New()<String, String>;
 		
@@ -167,15 +180,27 @@ class RequestHandler from Thread {
 		return headers;
 	}
 
+	#~
+	Callback for GET requests
+	@param request_url URL requested
+	@param request_headers URL request headers
+	@param response_headers URL response headers
+	@return GET request content
+	~#
 	method : virtual : ProcessGet(request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Byte[];
 
+	#~
+	Callback for POST requests
+	@param buffer content to POST
+	@return true if successful, false otherwise
+	~#
 	method : virtual : ProcessPost(buffer : Byte[]) ~ Bool;
 }
 
 #~
 My handler
 ~#
-class MyHandler from RequestHandler {
+class MyHandler from HttpRequestHandler {
 	@content_cache : static : Cache<String, ByteArrayHolder>;
 	@content_type_cache : static : Hash<String, String>;
 	@content_mutex : static : ThreadMutex;
@@ -195,8 +220,8 @@ class MyHandler from RequestHandler {
 		@content_mutex := ThreadMutex->New("__content_cache__");
 	}
 
-	New(debug : Bool) {
-		Parent(debug);
+	New() {
+		Parent();
 	}
 
 	method : ProcessGet(request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Byte[] {
