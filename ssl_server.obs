@@ -4,6 +4,10 @@ use System.IO.Net;
 
 #~
 Mini web server test
+
+- curl -k -X POST https://localhost:60013 -H "Content-Type: application/json" -d "{ \"long\": \"https://www.cockroachlabs.com/docs/stable/build-a-go-app-with-cockroachdb.html\" }"
+- objeck_lsp.obe objk_apis.json 6013 debug
+- ..\..\..\..\objeck-lsp\server
 ~#
 class Test {
 	function : Main(args : String[]) ~ Nil {
