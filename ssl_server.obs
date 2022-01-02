@@ -1,5 +1,6 @@
 use System.Concurrency;
 use Collection.Generic;
+use Data.JSON;
 use Web.HTTP;
 
 #~
@@ -89,9 +90,21 @@ class MyHandler from HttpsRequestHandler {
 		return content;
 	}
 
-	method : ProcessPost(buffer : Byte[]) ~ Bool {
-		content := String->New(buffer);
-		content->PrintLine();
-		return true;
+	method : ProcessPost(buffer : Byte[], request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Byte[] {
+		response : Byte[];
+
+		json := JsonParser->New(String->New(buffer));
+		if(json->Parse()) {
+			url_json := json->GetRoot()->Get("long");
+			url_long := url_json->GetValue();
+			url_long->PrintLine();
+
+			
+
+			response_headers->Insert("Content-type", "application/json");
+			response := "{ \"short\": \"http://localhost:8080/9eXmFnuj\" }"->ToByteArray();
+		};
+
+		return response;
 	}
 }
