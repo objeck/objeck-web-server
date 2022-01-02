@@ -7,6 +7,17 @@ Mini web server
 ~#
 class SSLServer {
 	@server : static : TCPSecureSocketServer;
+	@cert : String;
+	@cert_key : String;
+	@cert_key_passwd : String;
+	@port : Int;
+
+	New(cert : String, cert_key : String, cert_key_passwd : String, port : Int) {
+		@cert := cert;
+		@cert_key := cert_key;
+		@cert_key_passwd := cert_key_passwd;
+		@port := port;
+	}
 	
 	function : Main(args : String[]) ~ Nil {
 		if(args->Size() = 4) {
@@ -15,24 +26,28 @@ class SSLServer {
 			cert_key_passwd := args[2];
 			port := args[3]->ToInt();
 
+			MyHandler->Init();			
+			SSLServer->New(cert, cert_key, cert_key_passwd, port)->Serve();
+		};
+  	}
+
+  	method : public : Serve() ~ Nil {
+		@server := TCPSecureSocketServer->New(@cert, @cert_key, @cert_key_passwd, @port);
+
+  		Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
+		if(@server->Listen()) {
 			platform := Runtime->GetPlatform();
 			host := TCPSocket->HostName();
-			
-			MyHandler->Init();
-			Runtime->SetSignal(Runtime->Signal->SIGINT, Shutdown(Int) ~ Nil);
-			@server := TCPSecureSocketServer->New(cert, cert_key, cert_key_passwd, port);
 
-			if(@server->Listen()) {
-			 	"Running on {$host} ({$platform}) port {$port}..."->PrintLine();
-				while(true) {
-					MyHandler->New(true)->Execute(@server->Accept());
-				};
-			}
-			else {
-				# TODO: log errors
-				err_msg := @server->GetLastError();
-				"Error: '{$err_msg}'"->ErrorLine();
+		 	"Running on {$host} ({$platform}) port {$@port}..."->PrintLine();
+			while(true) {
+				MyHandler->New(true)->Execute(@server->Accept());
 			};
+		}
+		else {
+			# TODO: log errors
+			err_msg := @server->GetLastError();
+			"Error: '{$err_msg}'"->ErrorLine();
 		};
   	}
 
