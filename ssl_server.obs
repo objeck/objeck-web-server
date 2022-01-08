@@ -4,11 +4,7 @@ use Data.JSON;
 use Web.HTTP;
 
 #~
-Mini web server test
-
-- curl -k -X POST https://localhost:60013 -H "Content-Type: application/json" -d "{ \"long\": \"https://www.cockroachlabs.com/docs/stable/build-a-go-app-with-cockroachdb.html\" }"
-- objeck_lsp.obe objk_apis.json 6013 debug
-- ..\..\..\..\objeck-lsp\server
+Mini web server
 ~#
 class Test {
 	function : Main(args : String[]) ~ Nil {
@@ -18,16 +14,16 @@ class Test {
 			cert_key_passwd := args[2];
 			port := args[3]->ToInt();
 
-			MyHandler->Init();			
-			WebServer->ServeSecure(MyHandler->New()->GetClass(), port, cert, cert_key, cert_key_passwd, true);
+			RequestHandler->Init();			
+			WebServer->ServeSecure(RequestHandler->New()->GetClass(), port, cert, cert_key, cert_key_passwd, true);
 		};
 	}
 }
 
 #~
-My handler
+Request handler
 ~#
-class MyHandler from HttpsRequestHandler {
+class RequestHandler from HttpsRequestHandler {
 	@content_cache : static : Cache<String, ByteArrayHolder>;
 	@content_type_cache : static : Hash<String, String>;
 	@content_mutex : static : ThreadMutex;
@@ -51,7 +47,7 @@ class MyHandler from HttpsRequestHandler {
 		Parent();
 	}
 
-	method : ProcessGet(request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Byte[] {
+	method : ProcessGet(request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Response {
 		content : Byte[];
 
 		request_type_index := request_url->FindLast('.');
@@ -87,24 +83,10 @@ class MyHandler from HttpsRequestHandler {
 			};
 		};
 
-		return content;
+		return Response->New(200, content);
 	}
 
-	method : ProcessPost(buffer : Byte[], request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Byte[] {
-		response : Byte[];
-
-		json := JsonParser->New(String->New(buffer));
-		if(json->Parse()) {
-			url_json := json->GetRoot()->Get("long");
-			url_long := url_json->GetValue();
-			url_long->PrintLine();
-
-			
-
-			response_headers->Insert("Content-type", "application/json");
-			response := "{ \"short\": \"http://localhost:8080/9eXmFnuj\" }"->ToByteArray();
-		};
-
-		return response;
+	method : ProcessPost(buffer : Byte[], request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Response {
+		return Nil;
 	}
 }
