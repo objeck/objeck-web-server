@@ -1,4 +1,6 @@
 # change localhost to server address and ip
+mkdir keys
+cd keys
 rm -f local.* *.pem *.crt
 openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
   -keyout local.key -out local.crt -subj "/CN=localhost" \
@@ -11,3 +13,4 @@ rm local.crt local.key
 chmod 600 cert.key
 sudo cp cert.crt /usr/local/share/ca-certificates
 sudo update-ca-certificates
+cd ..
