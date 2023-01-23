@@ -69,7 +69,7 @@ class RequestHandler from HttpsRequestHandler {
 						}
 						# not found, add to cache
 						else {
-							content := System.IO.File.FileReader->ReadBinaryFile(path_name);
+							content := System.IO.Filesystem.FileReader->ReadBinaryFile(path_name);
 							if(content <> Nil) {
 								@content_cache->Insert(path_name, ByteArrayHolder->New(content));
 							};
