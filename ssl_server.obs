@@ -87,6 +87,19 @@ class RequestHandler from HttpsRequestHandler {
 	}
 
 	method : ProcessPost(buffer : Byte[], request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Response {
-		return Nil;
+		if(buffer <> Nil & buffer->Size() > 0) {
+			decoder := MultipartEncoding->New(buffer);
+			contents := decoder->Parse()<MultipartContent>;
+			if(contents->Size() = 1) {
+				content := contents->Get(0);
+				header_names :=  content->GetHeaderNames()<String>;
+				each(j : header_names) {
+					header_names->Get(j)->PrintLine();
+				};
+				System.IO.Filesystem.FileWriter->WriteFile("html/upload.jpg", content->GetContent());
+			};
+		};
+
+		return Response->New(200, "<html><h2>Hello World!</h2><br/><img src='upload.jpg'>Uploaded Image</img><html>");
 	}
 }
