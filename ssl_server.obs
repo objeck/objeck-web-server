@@ -83,8 +83,19 @@ class RequestHandler from HttpsRequestHandler {
 				};
 			};
 		};
-		
-		return Response->New(200, content->CompressGzip());
+
+		if(content <> Nil) {
+			# just a test... likely store compressed assets
+			encoding_types := request_headers->Find("Accept-Encoding");
+			if(encoding_types <> Nil & encoding_types->Has("gzip")) {
+				content := content->CompressGzip();
+			};
+			
+			return Response->New(200, content);
+		}
+		else {
+			return Response->New(404);
+		};
 	}
 
 	method : ProcessPost(buffer : Byte[], request_url : String, request_headers : Map<String, String>, response_headers : Map<String, String>) ~ Response {
