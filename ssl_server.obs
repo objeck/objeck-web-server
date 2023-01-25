@@ -77,7 +77,6 @@ class RequestHandler from HttpsRequestHandler {
 
 					if(content <> Nil) {
 						response_headers->Insert("Content-Type", "{$content_type}");
-						response_headers->Insert("Content-Encoding", "gzip");
 					};
 				};
 			};
@@ -87,6 +86,7 @@ class RequestHandler from HttpsRequestHandler {
 			# just a test... likely store compressed assets
 			encoding_types := request_headers->Find("Accept-Encoding");
 			if(encoding_types <> Nil & encoding_types->Has("gzip")) {
+				response_headers->Insert("Content-Encoding", "gzip");
 				content := content->CompressGzip();
 			};
 			
