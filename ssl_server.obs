@@ -77,9 +77,13 @@ class RequestHandler from HttpsRequestHandler {
 					};
 
 					if(content <> Nil) {
+						if(request->HasCookie("foo")) {
+							"--- Found Cookie! ---"->PrintLine();
+						};
+
 						response->SetContentType(content_type);
 						response->AddCookie("foo", "bar");
-						response->AddCookie("left", "right");
+						response->UpdateCookie("foo", "club");
 					};
 				};
 			};

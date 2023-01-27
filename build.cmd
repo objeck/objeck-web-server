@@ -5,7 +5,7 @@ if [%1] == [] goto end
 	obc -src ssl_server.obs -lib net,json
 
 	if [%2] NEQ [brun] goto brun
-		obr ssl_server keys\cert.crt keys\cert.key 1234 60013
+		obr ssl_server keys\cert.crt keys\cert.key 1234 8080
 	:brun
 :end
 
