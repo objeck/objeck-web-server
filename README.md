@@ -3,7 +3,7 @@
 Sample programs for the Objeck web server library.
 
 Examples:
-* Hello World
+* [Hello World](hello_http.obs)
 * Form Post
 * Response compression using gzip
 * Multipart-mime upload

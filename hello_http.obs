@@ -1,0 +1,21 @@
+use Web.HTTP.Server;
+
+class Test {
+	function : Main(args : String[]) ~ Nil {
+		if(args->Size() = 1) {
+			WebServer->Serve(RequestHandler->New()->GetClass(), args[0]->ToInt(), true);
+		};
+	}
+}
+
+class RequestHandler from HttpRequestHandler {
+	New() {
+		Parent();
+	}
+	
+	method : ProcessGet(request : Request, response : Response) ~ Nil {
+		response->SetCodeContent(200, "<html><center><h1>Hello World!</center></h1></html>");
+	}
+
+	method : ProcessPost(request : Request, response : Response) ~ Nil {}
+}
