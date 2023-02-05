@@ -1,0 +1,57 @@
+#~
+To run, specify the port (for example: http://localhost:8080)
+~#
+
+use Web.HTTP.Server;
+
+class Test {
+	function : Main(args : String[]) ~ Nil {
+		if(args->Size() = 4) {
+			cert := args[0];
+			cert_key := args[1];
+			cert_key_passwd := args[2];
+			port := args[3]->ToInt();
+
+			WebServer->ServeSecure(RequestHandler->New()->GetClass(), port, cert, cert_key, cert_key_passwd, true);
+		};
+	}
+}
+
+class RequestHandler from HttpsRequestHandler {
+	New() {
+		Parent();
+	}
+
+	method : ProcessGet(request : Request, response : Response) ~ Nil {
+		buffer := "<html>";
+		buffer += "<form method='POST'>";
+		buffer += "<div>";
+		buffer += "<label for='say'>What greeting do you want to say?</label>";
+		buffer += "<input name='say' id='say' value='Hella Connected' />";
+		buffer += "</div>";
+		buffer += "<div>";
+		buffer += "<label for='to'>Who do you want to say it to?</label>";
+		buffer += "<input name='to' id='to' value='Oakland Data Center' />";
+		buffer += "</div>";
+		buffer += "<div>";
+		buffer += "<button>Send my greetings</button>";
+		buffer += "</div>";
+		buffer += "</form>";
+		buffer += "</html>";
+
+		response->SetCodeContent(200, buffer);
+	}
+
+	method : ProcessPost(request : Request, response : Response) ~ Nil {
+		buffer := request->GetContentBytes();
+		if(buffer <> Nil & buffer->Size() > 0) {
+			say_str := Web.HTTP.Url->Decode(request->GetParam("say"));
+			to_str := Web.HTTP.Url->Decode(request->GetParam("to"));
+
+			response->SetCodeContent(200, "<html><center><h2>We want to say {$say_str}, {$to_str}!</h2></center></html>");
+		}
+		else {
+			response->SetCode(400);
+		};
+	}
+}
