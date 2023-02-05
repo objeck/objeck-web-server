@@ -1,14 +1,8 @@
 @echo off
 
-if [%1] == [] goto end
-	obc -src hello_http.obs -lib net,json
-REM	obc -src ssl_server.obs -lib net,json
+if [%1] NEQ [] (
+	obc -src %1\core\compiler\lib_src\net_common.obs,%1\core\compiler\lib_src\net.obs,%1\core\compiler\lib_src\net_secure.obs -tar lib -dest %1\core\release\deploy64\lib\net.obl
+)
 
-	if [%2] NEQ [brun] goto brun
-		obr ssl_server keys\cert.crt keys\cert.key 1234 8080
-	:brun
-:end
-
-if [%1] NEQ []  goto usage
-	@echo build.cmd [objeck_dir]
-:usage
+obc -src hello_http.obs -lib net,json
+obc -src form_post_https.obs -lib net,json
