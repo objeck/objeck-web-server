@@ -5,7 +5,7 @@ Sample programs for the Objeck web server library.
 Examples:
 * [Hello World](hello_http.obs)
 * [Form post with cookies](form_post_https.obs)
-* Response compression using gzip
+* [Response compression using gzip](compress_response_https.obs)
 * Multipart-mime upload
 
 Please refer to the Objeck [project page](https://github.com/objeck/objeck-lang/) to learn more about the language.
