@@ -4,7 +4,7 @@ Sample programs for the Objeck web server library.
 
 Examples:
 * [Hello World](hello_http.obs)
-* Form Post with cookie support
+* Form post with cookies
 * Response compression using gzip
 * Multipart-mime upload
 
