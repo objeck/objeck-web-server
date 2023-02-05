@@ -70,7 +70,7 @@ class RequestHandler from HttpsRequestHandler {
 			</tr>
 			</table></html>";
 
-		response->SetCodeContentCompressed(200, buffer, Response->Compression->GZIP);
+		response->SetCodeContentCompression(200, buffer, Response->Compression->GZIP);
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Nil {}
