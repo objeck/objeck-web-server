@@ -1,3 +1,7 @@
+#~
+To run specify the port for example: http://localhost:8080
+~#
+
 use Web.HTTP.Server;
 
 class Test {
@@ -12,7 +16,7 @@ class RequestHandler from HttpRequestHandler {
 	New() {
 		Parent();
 	}
-	
+
 	method : ProcessGet(request : Request, response : Response) ~ Nil {
 		response->SetCodeContent(200, "<html><center><h1>Hello World!</center></h1></html>");
 	}
