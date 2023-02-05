@@ -1,4 +1,4 @@
-# Objeck Web Server
+# Objeck - Web Server Library
 
 Sample programs for the Objeck web server library.
 
