@@ -1,6 +1,6 @@
 {
 	"network": {
-		"instance": "Default.RequestHandler",
+		"instance": "RequestHandler",
 		"port": 8081,
 		"debug": true,
 		"secure": {
@@ -13,6 +13,11 @@
 		{
 			"types": ".html",
 			"alias": "upload",
+			"location": "html/upload_file.html",
+			"cache": true
+		},
+		{
+			"types": ".html",
 			"location": "html/upload_file.html",
 			"cache": true
 		},
