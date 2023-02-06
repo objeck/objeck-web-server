@@ -1,0 +1,21 @@
+{
+	"files": [
+		{
+			"types": ".html",
+			"alias": "upload",
+			"location": "html/upload_file.html",
+			"cache": true
+		},
+		{
+			"types": ".html",
+			"alias": "show",
+			"location": "html/show_file.html",
+			"cache": true
+		},
+		{
+			"types": ".jpg,.jpeg",
+			"location": "html/upload_file.html",
+			"cache": false
+		}
+	]
+}

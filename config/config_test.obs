@@ -1,0 +1,63 @@
+use Collection.Generic;
+use Data.JSON;
+
+class Test {
+	@file_handler : Map<String, TypeHandler>;
+
+	function : Main(args : String[]) ~ Nil {
+		if(args->Size() = 1) {
+			Test->New()->Process(args[0]);
+		};
+	}
+
+	New() {
+		@file_handler := Map->New()<String, TypeHandler>;
+	}
+
+	method : Process(filename : String) ~ Nil {		
+		parser := JsonParser->New(System.IO.Filesystem.FileReader->ReadFile(filename));
+		if(parser->Parse()) {
+			"### Parsed! ###"->PrintLine();
+			files_json := parser->GetRoot()->Get("files");
+			if(files_json <> Nil) {
+				each(i : files_json) {
+					file_json := files_json->Get(i);
+					if(file_json->Has("types")) {
+						AddFile(file_json);
+					};
+				};
+			};
+		};
+	}
+
+	method : AddFile(file_json : JsonElement) ~ Nil {
+		types_json := file_json->Get("types");
+		alias_json :=  file_json->Get("alias");
+		location_json :=  file_json->Get("location");
+		cache_json :=  file_json->Get("cache");
+
+		if(types_json <> Nil & location_json <> Nil) {
+			types_str := types_json->GetString();
+			location_str := location_json->GetString();
+
+			type_strs := types_str->Split(',');
+			if(type_strs->Size() > 0) {
+				each(i : type_strs) {
+					type_str := type_strs[i];
+					"### type='{$type_str}', location='{$location_str}' ###"->PrintLine();
+				};
+			}
+			else {
+				"### type='{$types_str}', location='{$location_str}' ###"->PrintLine();
+			};
+		};
+	}
+}
+
+class TypeHandler {
+	@type : String;
+
+	New(type : String) {
+		@type := type;
+	}
+}
