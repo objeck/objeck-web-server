@@ -2,7 +2,7 @@ use Collection.Generic;
 use Data.JSON;
 
 class Test {
-	@file_handler : Map<String, TypeHandler>;
+	@file_type_handler : Hash<String, TypeHandler>;
 
 	function : Main(args : String[]) ~ Nil {
 		if(args->Size() = 1) {
@@ -11,7 +11,7 @@ class Test {
 	}
 
 	New() {
-		@file_handler := Map->New()<String, TypeHandler>;
+		@file_type_handler := Hash->New()<String, TypeHandler>;
 	}
 
 	method : Process(filename : String) ~ Nil {		
@@ -32,32 +32,70 @@ class Test {
 
 	method : AddFile(file_json : JsonElement) ~ Nil {
 		types_json := file_json->Get("types");
-		alias_json :=  file_json->Get("alias");
 		location_json :=  file_json->Get("location");
-		cache_json :=  file_json->Get("cache");
 
 		if(types_json <> Nil & location_json <> Nil) {
 			types_str := types_json->GetString();
-			location_str := location_json->GetString();
-
 			type_strs := types_str->Split(',');
 			if(type_strs->Size() > 0) {
 				each(i : type_strs) {
-					type_str := type_strs[i];
-					"### type='{$type_str}', location='{$location_str}' ###"->PrintLine();
+					AddHandler(type_strs[i], file_json);
 				};
 			}
 			else {
-				"### type='{$types_str}', location='{$location_str}' ###"->PrintLine();
+				AddHandler(types_str, file_json);
 			};
+		};
+	}
+
+	method : AddHandler(type : String, file_json : JsonElement) ~ Nil {
+		alias_str : String;
+		alias_json := file_json->Get("alias");
+		if(alias_json <> Nil) {
+			alias_str := alias_json->GetString();
+		};
+
+		location_str : String;
+		location_json := file_json->Get("location");
+		if(location_json <> Nil) {
+			location_str := location_json->GetString();
+		};
+
+		cache_flag : Bool;
+		cache_json := file_json->Get("cache");
+		if(cache_json <> Nil) {
+			cache_flag := cache_json->GetBool();
+		};
+
+		# get/add handler
+		type_handler := @file_type_handler->Find(type);
+		if(type_handler = Nil) {
+			type_handler := TypeHandler->New(type);
+		};
+
+		if(<>type_handler->Insert(alias_str, location_str, cache_flag)) {
+			"Unable to add file, duplicate location '{$location_str}'"->ErrorLine();
 		};
 	}
 }
 
 class TypeHandler {
 	@type : String;
+	@alias_map : Map<String, String>;
+	@location_set : Set<String>;
 
 	New(type : String) {
 		@type := type;
+		@alias_map := Map->New()<String, String>;
+		@location_set := Set->New()<String>;
+	}
+
+	method : public : Insert(alias_str : String, location_str : String, cache_flag : Bool) ~ Bool {
+		if(@location_set->Has(location_str)) {
+			return false;
+		};
+
+		"### Working... ###"->PrintLine();
+		return true;
 	}
 }
