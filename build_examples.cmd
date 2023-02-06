@@ -8,3 +8,4 @@ if [%1] NEQ [] (
 obc -src examples\hello_http.obs -lib net,json
 obc -src examples\form_post_https.obs -lib net,json
 obc -src examples\compress_response_https.obs -lib net,json
+obc -src examples\multi_mime_http.obs -lib net,json

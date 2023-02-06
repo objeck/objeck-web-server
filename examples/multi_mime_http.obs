@@ -3,7 +3,7 @@ use Collection.Generic;
 use Web.HTTP.Server;
 
 #~
-Mini web server
+To run, specify port, cert, cert_key, cert_key_passwd
 ~#
 class Test {
 	function : Main(args : String[]) ~ Nil {
@@ -13,7 +13,6 @@ class Test {
 			cert_key_passwd := args[2];
 			port := args[3]->ToInt();
 
-			RequestHandler->Init();			
 			WebServer->ServeSecure(RequestHandler->New()->GetClass(), port, cert, cert_key, cert_key_passwd, true);
 		};
 	}
@@ -23,83 +22,35 @@ class Test {
 Request handler
 ~#
 class RequestHandler from HttpsRequestHandler {
-	@content_cache : static : Cache<String, ByteArrayHolder>;
-	@content_type_cache : static : Hash<String, String>;
-	@content_mutex : static : ThreadMutex;
-	
-	function : Init() ~ Nil {
-		# MIME type mapping
-		@content_type_cache := Hash->New()<String, String>;
-		@content_type_cache->Insert(".html", "text/html");
-		@content_type_cache->Insert(".htm", "text/html");
-		@content_type_cache->Insert(".css", "text/css");
-		@content_type_cache->Insert(".png", "image/png");
-		@content_type_cache->Insert(".jpg", "image/jpeg");
-		@content_type_cache->Insert(".ico", "image/x-icon");
-		@content_type_cache->Insert(".js", "application/javascript");
-
-		@content_cache := Cache->New(Cache->Type->MRU, 16)<String, ByteArrayHolder>;
-		@content_mutex := ThreadMutex->New("__content_cache__");
-	}
-
 	New() {
 		Parent();
 	}
 
 	method : ProcessGet(request : Request, response : Response) ~ Nil {
 		request_url := request->GetUrl();
-
-		content : Byte[];
 		request_type_index := request_url->FindLast('.');
 		if(request_type_index > 0) {
-			# check the request type
 			request_type := request_url->SubString(request_type_index, request_url->Size() - request_type_index);
 			if(request_type <> Nil) {
-				content_type := @content_type_cache->Find(request_type);
-				if(content_type <> Nil) {
-					path_name := "./html";
-					path_name += request_url;
+				if(request_type->Equals(".jpg")) {
+					buffer := System.IO.Filesystem.FileReader->ReadBinaryFile("examples/upload.jpg");
+					response->SetContentType("image/jpeg");
+					response->SetCodeContent(200, buffer);
+				}
+				else if(request_type->Equals(".html")) {
+					buffer := "<html>";
+					buffer += "<body>";
+					buffer += "<p>Click on the 'Choose File' button to upload a file:</p>";
+					buffer += "<form method='post' enctype='multipart/form-data'>";
+					buffer += "<input type='file' id='myFile' name='filename'>";
+					buffer += "<input type='submit'>";
+					buffer += "</form>";
+					buffer += "</body>";
+					buffer += "</html>";
 
-					# lock cache for while we search or insert content
-					critical(@content_mutex) {
-						# found in cache
-						found := @content_cache->Find(path_name);
-						if(found <> Nil) {
-							content := found->Get();
-						}
-						# not found, add to cache
-						else {
-							content := System.IO.Filesystem.FileReader->ReadBinaryFile(path_name);
-							if(content <> Nil) {
-								@content_cache->Insert(path_name, ByteArrayHolder->New(content));
-							};
-						};
-					};
-
-					if(content <> Nil) {
-						if(request->HasCookie("foo")) {
-							"--- Found Cookie! ---"->PrintLine();
-						};
-
-						response->SetContentType(content_type);
-						response->AddCookie("foo", "bar");
-						response->UpdateCookie("foo", "club");
-					};
+					response->SetCodeContent(200, buffer);
 				};
 			};
-		};
-
-		if(content <> Nil) {
-			# just a test... likely store compressed assets
-			encoding_types := request->GetRequestHeader("Accept-Encoding");
-			if(encoding_types <> Nil & encoding_types->Has("gzip")) {
-				response->SetCompression(Response->Compression->GZIP);
-			};
-			
-			response->SetCodeContent(200, content);
-		}
-		else {
-			response->SetCode(404);
 		};
 	}
 
@@ -114,10 +65,10 @@ class RequestHandler from HttpsRequestHandler {
 				each(j : header_names) {
 					header_names->Get(j)->PrintLine();
 				};
-				System.IO.Filesystem.FileWriter->WriteFile("html/upload.jpg", content->GetContent());
+				System.IO.Filesystem.FileWriter->WriteFile("examples/upload.jpg", content->GetContent());
 			};
 		};
 
-		response->SetCodeContent(200, "<html><h2>Hello World!</h2><br/><img src='upload.jpg'>Uploaded Image</img><html>");
+		response->SetCodeContent(200, "<html><center><h2>Uploaded Image</h2><br/><img src='examples/upload.jpg'/></center><html>");
 	}
 }
