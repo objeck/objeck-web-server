@@ -16,7 +16,7 @@ class RequestHandler from HttpsRequestHandler {
 	}
 	
 	method : ProcessGet(request : Request, response : Response) ~ Bool {
-		return true;
+		return response->HasGroupHandler();
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
