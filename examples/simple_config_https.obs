@@ -14,13 +14,10 @@ class RequestHandler from HttpsRequestHandler {
 	New() {
 		Parent();
 	}
-
+	
 	method : ProcessGet(request : Request, response : Response) ~ Nil {
-		buffer := "<html>Hello</html>";
-
-		response->SetCodeContent(200, buffer);
+		response->SetCodeContent(200, "<html>Default!</html>");
 	}
 
-	method : ProcessPost(request : Request, response : Response) ~ Nil {
-	}
+	method : ProcessPost(request : Request, response : Response) ~ Nil {}
 }
