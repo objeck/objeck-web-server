@@ -11,24 +11,27 @@
 	},
 	"files": [
 		{
-			"types": ".html",
+			"groups": ".html",
+			"alias": "index.html",
+			"mime-type": "text/html",
+			"location": "html/index.html",
+			"cache": true
+		},
+		{
+			"groups": ".html",
 			"alias": "upload",
 			"location": "html/upload_file.html",
 			"cache": true
 		},
 		{
-			"types": ".html",
-			"location": "html/upload_file.html",
-			"cache": true
-		},
-		{
-			"types": ".html",
+			"groups": ".html",
 			"alias": "show",
 			"location": "html/show_file.html",
 			"cache": true
 		},
 		{
-			"types": ".jpg,.jpeg",
+			"groups": ".jpg,.jpeg",
+			"alias": "upload.jpg",
 			"location": "html/upload.jpg",
 			"cache": false
 		}
