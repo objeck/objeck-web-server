@@ -14,7 +14,7 @@
 		},
 		{
 			"types": ".jpg,.jpeg",
-			"location": "html/upload_file.html",
+			"location": "html/upload.jpg",
 			"cache": false
 		}
 	]
