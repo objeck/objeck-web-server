@@ -17,9 +17,12 @@ class RequestHandler from HttpRequestHandler {
 		Parent();
 	}
 
-	method : ProcessGet(request : Request, response : Response) ~ Nil {
+	method : ProcessGet(request : Request, response : Response) ~ Bool {
 		response->SetCodeContent(200, "<html><center><h1>Hello World!</center></h1></html>");
+		return false;
 	}
 
-	method : ProcessPost(request : Request, response : Response) ~ Nil {}
+	method : ProcessPost(request : Request, response : Response) ~ Bool {
+		return false;
+	}
 }

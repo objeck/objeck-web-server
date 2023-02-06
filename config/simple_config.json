@@ -9,31 +9,36 @@
 			"cert_passwd": "1234"
 		}
 	},
-	"files": [
-		{
-			"groups": ".html",
-			"alias": "index.html",
-			"mime-type": "text/html",
-			"location": "html/index.html",
-			"cache": true
+	"files": {
+		"common": {
+			"base_dir": null
 		},
-		{
-			"groups": ".html",
-			"alias": "upload",
-			"location": "html/upload_file.html",
-			"cache": true
-		},
-		{
-			"groups": ".html",
-			"alias": "show",
-			"location": "html/show_file.html",
-			"cache": true
-		},
-		{
-			"groups": ".jpg,.jpeg",
-			"alias": "upload.jpg",
-			"location": "html/upload.jpg",
-			"cache": false
-		}
-	]
+		"items": [
+			{
+				"groups": ".html",
+				"alias": "index.html",
+				"mime-type": "text/html",
+				"location": "html/index.html",
+				"cache": true
+			},
+			{
+				"groups": ".html",
+				"alias": "upload",
+				"location": "html/upload_file.html",
+				"cache": true
+			},
+			{
+				"groups": ".html",
+				"alias": "show",
+				"location": "html/show_file.html",
+				"cache": true
+			},
+			{
+				"groups": ".jpg,.jpeg",
+				"alias": "upload.jpg",
+				"location": "html/upload.jpg",
+				"cache": false
+			}
+		]
+	}
 }

@@ -26,7 +26,7 @@ class RequestHandler from HttpsRequestHandler {
 		Parent();
 	}
 
-	method : ProcessGet(request : Request, response : Response) ~ Nil {
+	method : ProcessGet(request : Request, response : Response) ~ Bool {
 		request_url := request->GetUrl();
 		request_type_index := request_url->FindLast('.');
 		if(request_type_index > 0) {
@@ -52,9 +52,11 @@ class RequestHandler from HttpsRequestHandler {
 				};
 			};
 		};
+
+		return false;
 	}
 
-	method : ProcessPost(request : Request, response : Response) ~ Nil {
+	method : ProcessPost(request : Request, response : Response) ~ Bool {
 		buffer := request->GetContentBytes();
 		if(buffer <> Nil & buffer->Size() > 0) {
 			decoder := MultipartEncoding->New(buffer);
@@ -70,5 +72,6 @@ class RequestHandler from HttpsRequestHandler {
 		};
 
 		response->SetCodeContent(200, "<html><center><h2>Uploaded Image</h2><br/><img src='examples/upload.jpg'/></center><html>");
+		return false;
 	}
 }

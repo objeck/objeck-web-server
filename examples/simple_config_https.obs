@@ -15,9 +15,11 @@ class RequestHandler from HttpsRequestHandler {
 		Parent();
 	}
 	
-	method : ProcessGet(request : Request, response : Response) ~ Nil {
-		response->SetCodeContent(200, "<html>Default!</html>");
+	method : ProcessGet(request : Request, response : Response) ~ Bool {
+		return true;
 	}
 
-	method : ProcessPost(request : Request, response : Response) ~ Nil {}
+	method : ProcessPost(request : Request, response : Response) ~ Bool {
+		return false;
+	}
 }
