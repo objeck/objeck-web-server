@@ -1,11 +1,11 @@
 use Collection.Generic;
 use Data.JSON;
 
-class WebServerConfig {
+class WebServerConfig implements Web.HTTP.Server.RequestPageHandler {
 	@filename : String;
 	@instance_str : String;
 	@is_debug : Bool;
-	@host : String;
+	@is_handling_files : Bool;
 	@port : Int;
 	@cert_path : String;
 	@cert_key : String;
@@ -43,8 +43,8 @@ class WebServerConfig {
 		return @is_debug;
 	}
 
-	method : public : GetHost() ~ String {
-		return @host;
+	method : public : IsHandlingFile() ~ Bool {
+		return @is_handling_files;
 	}
 
 	method : public : GetPort() ~ Int {
@@ -69,13 +69,11 @@ class WebServerConfig {
 			};
 			
 			network_instance_json := network_json->Get("instance");
-			network_host_json := network_json->Get("host");
 			network_port_json := network_json->Get("port");
-			if(network_instance_json = Nil | network_host_json = Nil | network_port_json = Nil) {
+			if(network_instance_json = Nil | network_port_json = Nil) {
 				return false;
 			};
 			@instance_str := network_instance_json->GetString();
-			@host := network_host_json->GetString();
 			@port := network_port_json->GetString()->ToInt();
 
 			is_debug_json := network_json->Get("debug");
@@ -99,17 +97,17 @@ class WebServerConfig {
 
 			# process files
 			files_json := parser->GetRoot()->Get("files");
-			if(files_json = Nil) {
-				return false;
-			};
-
-			each(i : files_json) {
-				file_json := files_json->Get(i);
-				if(file_json->Has("types")) {
-					if(<>AddFiles(file_json)) {
-						return false;
+			if(files_json <> Nil) {				
+				each(i : files_json) {
+					file_json := files_json->Get(i);
+					if(file_json->Has("types")) {
+						if(<>AddFiles(file_json)) {
+							return false;
+						};
 					};
 				};
+			
+				@is_handling_files := true;
 			};
 
 			return true;
@@ -178,7 +176,7 @@ class WebServerConfig {
 
 	method : public : ToString() ~ String {
 		buffer := "[Network]\n";
-		buffer += "\tfilename='{$@filename}', instance='{$@instance_str}', host='{$@host}', port={$@port}, is_debug={$@is_debug}\n";
+		buffer += "\tfilename='{$@filename}', instance='{$@instance_str}', handling_files='{$@is_handling_files}', port={$@port}, is_debug={$@is_debug}\n";
 		if(@cert_path <> Nil & @cert_key <> Nil & @cert_passwd <> Nil) {
 			buffer += "\tcert_path='{$@cert_path}', cert_key='{$@cert_key}', cert_passwd='{$@cert_passwd}'\n";
 		};
@@ -195,6 +193,24 @@ class WebServerConfig {
 		};
 		
 		return buffer;
+	}
+
+	#~
+	Callback for GET requests
+	@param request HTTP request
+	@param response HTTP response
+	~#
+	method : public : ProcessGet(request : Request, response : Response) ~ Bool {
+		return true;
+	}
+
+	#~
+	Callback for POST requests
+	@param request HTTP request
+	@param response HTTP response
+	~#
+	method : public : ProcessPost(request : Request, response : Response) ~ Bool {
+		return true;
 	}
 }
 
