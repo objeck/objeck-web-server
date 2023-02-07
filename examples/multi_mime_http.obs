@@ -26,17 +26,17 @@ class RequestHandler from HttpsRequestHandler {
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
 		buffer := request->GetContentBytes();
 		if(buffer <> Nil & buffer->Size() > 0) {
-			decoder := MultipartEncoding->New(buffer);
-			contents := decoder->Parse()<MultipartContent>;
+			contents := MultipartEncoding->New(buffer)->Parse()<MultipartContent>;
 			if(contents->Size() = 1) {
 				content := contents->Get(0);
 				content_attribs := Request->ParseAttribs(content->GetHeader("Content-Disposition"))<String, String>;
+				
 				content_filename := content_attribs->Find("filename");
-"### 1: content_filename='{$content_filename}' ###"->PrintLine();			
-
-				file_path := "html/{$content_filename}";
-				System.IO.Filesystem.FileWriter->WriteFile(file_path, content->GetContent());
-				System.IO.Filesystem.File->Copy(file_path, "html/upload.jpg");
+				if(content_filename <> Nil) {
+					file_path := "html/{$content_filename}";
+					System.IO.Filesystem.FileWriter->WriteFile(file_path, content->GetContent());
+					System.IO.Filesystem.File->Copy(file_path, "html/upload.jpg");
+				};
 			};
 		};
 
