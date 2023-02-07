@@ -1,0 +1,43 @@
+#~
+To run, specify port, cert, cert_key, cert_key_passwd
+~#
+
+use Web.HTTP.Server;
+
+class Test {
+	function : Main(args : String[]) ~ Nil {
+		WebServer->ServeSecure("config/passwd_config.json");
+	}
+}
+
+class RequestHandler from HttpsRequestHandler {
+	New() {
+		Parent();
+	}
+	
+	method : ProcessGet(request : Request, response : Response) ~ Bool {
+		# authenticated
+		if(request->HasCookie("authenticated")) {
+			return response->SetForwardAlias("auth.html");
+		}
+		# check name and password
+		else if(request->HasParam("name") & request->HasParam("password")) {
+			name := request->GetParam("name");
+			password := request->GetParam("password");
+			if(name->Equals("mega") & password->Equals("1234")) {
+				response->AddCookie("authenticated", "true");
+				return response->SetForwardAlias("auth.html");
+			}
+			else {
+				return response->SetForwardAlias("index.html");
+			};
+		};
+		
+		# show login page
+		return response->HasGroupHandler();
+	}
+
+	method : ProcessPost(request : Request, response : Response) ~ Bool {
+		return false;
+	}
+}
