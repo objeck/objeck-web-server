@@ -7,14 +7,7 @@ To run, specify port, cert, cert_key, cert_key_passwd
 ~#
 class Test {
 	function : Main(args : String[]) ~ Nil {
-		if(args->Size() = 4) {
-			cert := args[0];
-			cert_key := args[1];
-			cert_key_passwd := args[2];
-			port := args[3]->ToInt();
-
-			WebServer->ServeSecure(RequestHandler->New()->GetClass(), port, cert, cert_key, cert_key_passwd, true);
-		};
+		WebServer->ServeSecure("config/multi_part_config.json");
 	}
 }
 
@@ -27,33 +20,7 @@ class RequestHandler from HttpsRequestHandler {
 	}
 
 	method : ProcessGet(request : Request, response : Response) ~ Bool {
-		request_url := request->GetUrl();
-		request_type_index := request_url->FindLast('.');
-		if(request_type_index > 0) {
-			request_type := request_url->SubString(request_type_index, request_url->Size() - request_type_index);
-			if(request_type <> Nil) {
-				if(request_type->Equals(".jpg")) {
-					buffer := System.IO.Filesystem.FileReader->ReadBinaryFile("examples/upload.jpg");
-					response->SetContentType("image/jpeg");
-					response->SetCodeContent(200, buffer);
-				}
-				else if(request_type->Equals(".html")) {
-					buffer := "<html>";
-					buffer += "<body>";
-					buffer += "<p>Click on the 'Choose File' button to upload a file:</p>";
-					buffer += "<form method='post' enctype='multipart/form-data'>";
-					buffer += "<input type='file' id='myFile' name='filename'>";
-					buffer += "<input type='submit'>";
-					buffer += "</form>";
-					buffer += "</body>";
-					buffer += "</html>";
-
-					response->SetCodeContent(200, buffer);
-				};
-			};
-		};
-
-		return false;
+		return true;
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
@@ -63,15 +30,16 @@ class RequestHandler from HttpsRequestHandler {
 			contents := decoder->Parse()<MultipartContent>;
 			if(contents->Size() = 1) {
 				content := contents->Get(0);
-				header_names :=  content->GetHeaderNames()<String>;
-				each(j : header_names) {
-					header_names->Get(j)->PrintLine();
-				};
-				System.IO.Filesystem.FileWriter->WriteFile("examples/upload.jpg", content->GetContent());
+				content_attribs := Request->ParseAttribs(content->GetHeader("Content-Disposition"))<String, String>;
+				content_filename := content_attribs->Find("filename");
+"### 1: content_filename='{$content_filename}' ###"->PrintLine();			
+
+				file_path := "html/{$content_filename}";
+				System.IO.Filesystem.FileWriter->WriteFile(file_path, content->GetContent());
+				System.IO.Filesystem.File->Copy(file_path, "html/upload.jpg");
 			};
 		};
 
-		response->SetCodeContent(200, "<html><center><h2>Uploaded Image</h2><br/><img src='examples/upload.jpg'/></center><html>");
-		return false;
+		return true;
 	}
 }

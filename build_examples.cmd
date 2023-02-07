@@ -14,5 +14,5 @@ obc -src examples\compress_response_https.obs -lib net,json
 obc -src examples\multi_mime_http.obs -lib net,json
 
 if [%2] == [brun] (
-	obr examples\simple_config_https
+	obr examples\multi_mime_http
 )
