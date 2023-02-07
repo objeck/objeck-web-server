@@ -17,7 +17,11 @@ class RequestHandler from HttpsRequestHandler {
 	
 	method : ProcessGet(request : Request, response : Response) ~ Bool {
 		# authenticated
-		if(request->HasCookie("authenticated")) {
+		if(request->HasParam("unauthenticated")) {
+			response->RemoveCookie("authenticated");
+		}
+		# unauthenticated
+		else if(request->HasCookie("authenticated")) {
 			return response->SetForwardAlias("auth.html");
 		}
 		# check name and password
@@ -27,14 +31,11 @@ class RequestHandler from HttpsRequestHandler {
 			if(name->Equals("mega") & password->Equals("1234")) {
 				response->AddCookie("authenticated", "true");
 				return response->SetForwardAlias("auth.html");
-			}
-			else {
-				return response->SetForwardAlias("index.html");
 			};
 		};
 		
 		# show login page
-		return response->HasGroupHandler();
+		return response->SetForwardAlias("index.html");
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
