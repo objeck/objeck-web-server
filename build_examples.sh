@@ -17,5 +17,5 @@ obc -src examples/multi_mime_https.obs -lib net,json
 obc -src examples/passwd_https.obs -lib net,json
 
 if [ ! -z "$1" ] && [ "$1" = "brun" ]; then
-	obr examples/hello_http
+	obr examples/passwd_https
 fi
