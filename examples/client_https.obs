@@ -1,0 +1,13 @@
+use Collection.Generic;
+use Web.HTTP;
+
+class Test {
+	function : Main(args : String[]) ~ Nil {
+		client := HttpsClient->New();
+		client->EnableCookies(true);
+		html := client->Get("https://www.linkedin.com/")<String>;
+		if(html <> Nil) {
+
+		};
+	}
+}
