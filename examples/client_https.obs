@@ -5,9 +5,15 @@ class Test {
 	function : Main(args : String[]) ~ Nil {
 		client := HttpsClient->New();
 		client->EnableCookies(true);
-		html := client->Get("https://www.linkedin.com/")<String>;
-		if(html <> Nil) {
+		document := client->Get("https://www.linkedin.com");
+		document->PrintLine();
 
+		"----"->PrintLine();
+
+		cookies := client->GetCookies()<Cookie>;
+		each(i : cookies) {
+			cookie := cookies->Get(i);
+			cookie->ToString()->PrintLine();
 		};
 	}
 }
