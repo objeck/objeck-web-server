@@ -29,7 +29,7 @@ class RequestHandler from HttpsRequestHandler {
 			name := request->GetParam("name");
 			password := request->GetParam("password");
 			if(name->Equals("mega") & password->Equals("1234")) {
-				response->AddCookie("authenticated", "true");
+				response->AddCookie(Web.HTTP.Cookie->New("authenticated", "true"));
 				return response->SetForwardAlias("auth.html");
 			};
 		};
