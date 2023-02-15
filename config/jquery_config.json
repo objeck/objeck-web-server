@@ -1,0 +1,33 @@
+{
+	"network": {
+		"instance": "RequestHandler",
+		"port": 443,
+		"debug": true,
+		"secure": {
+			"cert_path": "keys/cert.crt",
+			"cert_key_path": "keys/cert.key",
+			"cert_passwd": "1234"
+		}
+	},
+	"files": {
+		"common": {
+			"base_dir": null
+		},
+		"items": [
+			{
+				"groups": ".html",
+				"alias": "index.html",
+				"mime-type": "text/html",
+				"location": "html/jquery.html",
+				"cache": true
+			},
+			{
+				"groups": ".jpg",
+				"alias": "image.jpg",
+				"mime-type": "image/jpeg",
+				"location": "html/jquery.jpg",
+				"cache": true
+			}
+		]
+	}
+}

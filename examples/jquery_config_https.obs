@@ -1,0 +1,47 @@
+#~
+To run, specify port, cert, cert_key, cert_key_passwd
+~#
+
+use Web.HTTP.Server;
+
+class Test {
+	function : Main(args : String[]) ~ Nil {
+		WebServer->ServeSecure("config/jquery_config.json");
+	}
+}
+
+class RequestHandler from HttpsRequestHandler {
+	New() {
+		Parent();
+	}
+	
+	method : ProcessGet(request : Request, response : Response) ~ Bool {
+		query := request->GetQuery();
+		if(query <> Nil) {
+			tags := request->GetParam("tags");
+			tagmode := request->GetParam("tagmode");
+			format := request->GetParam("format");
+
+			if(tags <> Nil & tagmode <> Nil & format <> Nil) {
+				buffer := "{
+					\"items\": [
+						{ \"media\": {\"m\": \"https:\\/\\/localhost/image.jpg\"} },
+						{ \"media\": {\"m\": \"https:\\/\\/localhost/image.jpg\"} },
+						{ \"media\": {\"m\": \"https:\\/\\/localhost/image.jpg\"} },
+						{ \"media\": {\"m\": \"https:\\/\\/localhost/image.jpg\"} },
+						{ \"media\": {\"m\": \"https:\\/\\/localhost/image.jpg\"} }
+					]
+				}";
+
+				response->SetCodeTypeContent(200, "application/json", buffer);
+				return false;
+			};
+		};
+
+		return true;
+	}
+
+	method : ProcessPost(request : Request, response : Response) ~ Bool {
+		return false;
+	}
+}
