@@ -16,8 +16,9 @@ class RequestHandler from HttpsRequestHandler {
 	}
 	
 	method : ProcessGet(request : Request, response : Response) ~ Bool {
+		path := request->GetPath();
 		query := request->GetQuery();
-		if(query <> Nil) {
+		if(path <> Nil & path->Equals("images.json") & query <> Nil) {
 			tags := request->GetParam("tags");
 			tagmode := request->GetParam("tagmode");
 			format := request->GetParam("format");
