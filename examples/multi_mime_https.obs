@@ -1,5 +1,5 @@
 use System.Concurrency;
-use Collection.Generic;
+use Collection;
 use Web.HTTP.Server;
 
 #~
