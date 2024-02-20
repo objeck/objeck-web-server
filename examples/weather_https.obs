@@ -24,15 +24,14 @@ class RequestHandler from HttpsRequestHandler {
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
+		# TODO: sanitize inputs
 		address := request->GetParam("address");
 		city := request->GetParam("city");
 		state := request->GetParam("state");
 
-		# TODO: sanitize input
-
-		lat_lon := WeatherForcast->FromNet(address, city, state);
-		if(lat_lon <> Nil) {
-			response->SetCodeContent(200, WeatherForcast->FormatHtml(lat_lon));
+		forecast := WeatherForcast->Query(address, city, state);
+		if(forecast <> Nil) {
+			response->SetCodeContent(200, WeatherForcast->FormatResponse(forecast));
 		}
 		else {
 			response->SetCodeContent(200, "<html><h2>Unable to find location!</h2><button onclick='history.back()''>Back</button></html>");
@@ -42,7 +41,7 @@ class RequestHandler from HttpsRequestHandler {
 }
 
 class WeatherForcast {
-	function : FormatHtml(forcast_data : Tuples.Pair<String, String>) ~ String {
+	function : FormatResponse(forcast_data : Tuples.Pair<String, String>) ~ String {
 		daily_data := ParseDailyForcast(forcast_data->GetFirst())
 
 		loc_str := forcast_data->GetSecond();
@@ -99,11 +98,11 @@ class WeatherForcast {
 		return html;
 	}
 
-	function : FromNet(address : String, city : String, state : String) ~ Tuples.Pair<String, String> {
+	function : Query(address : String, city : String, state : String) ~ Tuples.Pair<String, String> {
 		forcast_doc : String;
 		loc_str : String;
 
-		lat_lon := GetLatLon(address, city, state);
+		lat_lon := Geocode(address, city, state);
 		if(lat_lon <> Nil) {
 			lat := lat_lon->GetFirst();
 			lon := lat_lon->GetSecond();
@@ -141,7 +140,7 @@ class WeatherForcast {
 		return Nil;
 	}
 
-	function : GetLatLon(address : String, city : String, state : String) ~ Tuples.Pair<FloatRef, FloatRef> {
+	function : Geocode(address : String, city : String, state : String) ~ Tuples.Pair<FloatRef, FloatRef> {
 		address := Url->Encode(address);
 		city := Url->Encode(city);
 		state := Url->Encode(state);
