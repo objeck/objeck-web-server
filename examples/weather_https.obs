@@ -2,11 +2,11 @@
 To run, specify port, cert, cert_key, cert_key_passwd
 ~#
 
-use Web.HTTP.Server;
-use Web.HTTP;
 use System.IO.Filesystem;
+use Web.HTTP;
 use System.Time;
 use Collection;
+use Web.HTTP.Server;
 
 class WeatherServer {
 	function : Main(args : String[]) ~ Nil {
@@ -24,14 +24,16 @@ class RequestHandler from HttpsRequestHandler {
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
-		# TODO: sanitize inputs
-		address := request->GetParam("address");
-		city := request->GetParam("city");
-		state := request->GetParam("state");
+		"--- Called ---"->PrintLine();
+		address := request->GetParam("address")->Trim();
+		city := request->GetParam("city")->Trim();
+		state := request->GetParam("state")->Trim();
+		
+		# TODO: sanitize input, write routine
 
-		forecast := WeatherForcast->Query(address, city, state);
-		if(forecast <> Nil) {
-			response->SetCodeContent(200, WeatherForcast->FormatResponse(forecast));
+		lat_lon := WeatherForcast->FromNet(address, city, state);
+		if(lat_lon <> Nil) {
+			response->SetCodeContent(200, WeatherForcast->FormatHtml(lat_lon));
 		}
 		else {
 			response->SetCodeContent(200, "<html><h2>Unable to find location!</h2><button onclick='history.back()''>Back</button></html>");
@@ -41,7 +43,7 @@ class RequestHandler from HttpsRequestHandler {
 }
 
 class WeatherForcast {
-	function : FormatResponse(forcast_data : Tuples.Pair<String, String>) ~ String {
+	function : FormatHtml(forcast_data : Tuples.Pair<String, String>) ~ String {
 		daily_data := ParseDailyForcast(forcast_data->GetFirst())
 
 		loc_str := forcast_data->GetSecond();
@@ -93,16 +95,16 @@ class WeatherForcast {
 
 			html += "</tr>";
 		}
-		html += "</table></p></body></html>";
+		html += "</table></p><button onclick='history.back()''>Back</button></body></html>";
 
 		return html;
 	}
 
-	function : Query(address : String, city : String, state : String) ~ Tuples.Pair<String, String> {
+	function : FromNet(address : String, city : String, state : String) ~ Tuples.Pair<String, String> {
 		forcast_doc : String;
 		loc_str : String;
 
-		lat_lon := Geocode(address, city, state);
+		lat_lon := GetLatLon(address, city, state);
 		if(lat_lon <> Nil) {
 			lat := lat_lon->GetFirst();
 			lon := lat_lon->GetSecond();
@@ -114,6 +116,72 @@ class WeatherForcast {
 				forcast_bytes := HttpsClient->QuickGet(Url->New(loc_data->GetThird()))
 				if(forcast_bytes <> Nil) {
 					forcast_doc := forcast_bytes->ToString();
+					city := loc_data->GetFirst()
+					state := loc_data->GetSecond()
+					loc_str := "{$city}, {$state}"
+				}
+			}
+		}
+
+		if(forcast_doc <> Nil & loc_str <> Nil) {
+			return Tuples.Pair->New(forcast_doc, loc_str)<String, String>
+		}
+
+		return Nil
+	}
+
+	function : FromFile(path_name : String) ~ Tuples.Pair<String, String> {
+		forcast_doc := FileReader->ReadFile(path_name)
+		loc_str : String;
+
+		if(forcast_doc <> Nil) {
+			start := path_name->FindLast('/');
+			if(start < 0) {
+				start := path_name->FindLast('\\');
+			}
+
+			if(start > 0) {
+				start += 1;
+				len := path_name->Size() - start - 1;
+				if(len > 0) {
+					filename := path_name->SubString(start, len);
+					file_metadata := filename->Split('+')
+					if(file_metadata->Size() > 2) {
+						loc_str := "";
+
+						each(i : 2) {
+							file_tag := file_metadata[i];
+							#
+							# city
+							#
+							if(i = 0) {
+								each(j : file_tag) {
+									flag_pos := -1
+
+									if(j = 0) {
+										file_tag->Set(file_tag->Get(0) - 32, 0)
+									}
+									else if(file_tag->Get(j) = '_') {
+										file_tag->Set(' ', j)
+										flag_pos := j + 1;
+									}
+
+									if(flag_pos > 0) {
+										file_tag->Set(file_tag->Get(flag_pos) - 32, flag_pos)
+										flag_pos := -1
+									}
+								}
+								loc_str += file_tag;
+								loc_str += ", "
+							}
+							#
+							# state
+							#
+							else {
+								loc_str += file_tag->ToUpper();
+							}					
+						}
+					}
 				}
 			}
 		}
@@ -140,7 +208,7 @@ class WeatherForcast {
 		return Nil;
 	}
 
-	function : Geocode(address : String, city : String, state : String) ~ Tuples.Pair<FloatRef, FloatRef> {
+	function : GetLatLon(address : String, city : String, state : String) ~ Tuples.Pair<FloatRef, FloatRef> {
 		address := Url->Encode(address);
 		city := Url->Encode(city);
 		state := Url->Encode(state);
