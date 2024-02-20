@@ -2,11 +2,11 @@
 To run, specify port, cert, cert_key, cert_key_passwd
 ~#
 
-use System.IO.Filesystem;
+use Web.HTTP.Server;
 use Web.HTTP;
+use System.IO.Filesystem;
 use System.Time;
 use Collection;
-use Web.HTTP.Server;
 
 class WeatherServer {
 	function : Main(args : String[]) ~ Nil {
