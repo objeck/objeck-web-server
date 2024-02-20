@@ -24,26 +24,50 @@ class RequestHandler from HttpsRequestHandler {
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
-		"--- Called ---"->PrintLine();
-		address := request->GetParam("address")->Trim();
-		city := request->GetParam("city")->Trim();
-		state := request->GetParam("state")->Trim();
+		address := SanitizeInput(request->GetParam("address"))
+		city := SanitizeInput(request->GetParam("city"))
+		state := SanitizeInput(request->GetParam("state"))
 
-		# TODO: sanitize input, write routine
-
-		lat_lon := WeatherForcast->FromNet(address, city, state);
-		if(lat_lon <> Nil) {
-			response->SetCodeContent(200, WeatherForcast->FormatHtml(lat_lon));
+		location := WeatherForcast->Query(address, city, state);
+		if(location <> Nil) {
+			response->SetCodeContent(200, WeatherForcast->FormatResponse(location));
 		}
 		else {
 			response->SetCodeContent(200, "<html><h2>Unable to find location!</h2><button onclick='history.back()'>Back</button></html>");
 		}
 		return false;
 	}
+
+	method : SanitizeInput(input : String) ~ String {
+		output := "";
+		check := input->Trim();
+
+		each(char in check) {
+			select(char) {
+				label '&'
+				label '<'
+				label '>'
+				label '?'
+				label '\''
+				label '"'
+				label '`' {}
+
+				label '+' {
+					output->Append(' ');
+				}
+
+				other {
+					output->Append(char);
+				}
+			}
+		}
+
+		return output;
+	}
 }
 
 class WeatherForcast {
-	function : FormatHtml(forcast_data : Tuples.Pair<String, String>) ~ String {
+	function : FormatResponse(forcast_data : Tuples.Pair<String, String>) ~ String {
 		daily_data := ParseDailyForcast(forcast_data->GetFirst())
 
 		loc_str := forcast_data->GetSecond();
@@ -100,7 +124,7 @@ class WeatherForcast {
 		return html;
 	}
 
-	function : FromNet(address : String, city : String, state : String) ~ Tuples.Pair<String, String> {
+	function : Query(address : String, city : String, state : String) ~ Tuples.Pair<String, String> {
 		forcast_doc : String;
 		loc_str : String;
 
@@ -119,69 +143,6 @@ class WeatherForcast {
 					city := loc_data->GetFirst()
 					state := loc_data->GetSecond()
 					loc_str := "{$city}, {$state}"
-				}
-			}
-		}
-
-		if(forcast_doc <> Nil & loc_str <> Nil) {
-			return Tuples.Pair->New(forcast_doc, loc_str)<String, String>
-		}
-
-		return Nil
-	}
-
-	function : FromFile(path_name : String) ~ Tuples.Pair<String, String> {
-		forcast_doc := FileReader->ReadFile(path_name)
-		loc_str : String;
-
-		if(forcast_doc <> Nil) {
-			start := path_name->FindLast('/');
-			if(start < 0) {
-				start := path_name->FindLast('\\');
-			}
-
-			if(start > 0) {
-				start += 1;
-				len := path_name->Size() - start - 1;
-				if(len > 0) {
-					filename := path_name->SubString(start, len);
-					file_metadata := filename->Split('+')
-					if(file_metadata->Size() > 2) {
-						loc_str := "";
-
-						each(i : 2) {
-							file_tag := file_metadata[i];
-							#
-							# city
-							#
-							if(i = 0) {
-								each(j : file_tag) {
-									flag_pos := -1
-
-									if(j = 0) {
-										file_tag->Set(file_tag->Get(0) - 32, 0)
-									}
-									else if(file_tag->Get(j) = '_') {
-										file_tag->Set(' ', j)
-										flag_pos := j + 1;
-									}
-
-									if(flag_pos > 0) {
-										file_tag->Set(file_tag->Get(flag_pos) - 32, flag_pos)
-										flag_pos := -1
-									}
-								}
-								loc_str += file_tag;
-								loc_str += ", "
-							}
-							#
-							# state
-							#
-							else {
-								loc_str += file_tag->ToUpper();
-							}					
-						}
-					}
 				}
 			}
 		}
@@ -273,7 +234,7 @@ class WeatherForcast {
 			"-- Invalid JSON document --"->ErrorLine()
 		}
 
-		return Tuples.Pair->New(daily_forcasts, elevation->ToFloat())<Vector<DailyForcast>, FloatRef>;
+		return Tuples.Pair->New(daily_forcasts, elevation->ToFloat() * 3.28084)<Vector<DailyForcast>, FloatRef>;
 	}
 
 	function : FormatDate(time : Date) ~ String {
