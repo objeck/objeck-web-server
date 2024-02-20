@@ -22,18 +22,6 @@
 				"cache": true
 			},
 			{
-				"groups": ".html",
-				"alias": "upload",
-				"location": "html/upload_file.html",
-				"cache": true
-			},
-			{
-				"groups": ".html",
-				"alias": "show",
-				"location": "html/show_file.html",
-				"cache": true
-			},
-			{
 				"groups": ".jpg,.jpeg",
 				"alias": "upload.jpg",
 				"location": "html/upload.jpg",

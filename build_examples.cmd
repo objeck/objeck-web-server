@@ -8,6 +8,7 @@ if [%2] NEQ [] (
 del /q examples\*.obe examples\*.jpg 
 
 obc -src examples\simple_config_https.obs -lib net,json
+obc -src examples\weather_https.obs -lib net,json,misc
 obc -src examples\hello_http.obs -lib net,json
 obc -src examples\form_post_https.obs -lib net,json
 obc -src examples\compress_response_https.obs -lib net,json
@@ -16,10 +17,10 @@ obc -src examples\passwd_https.obs -lib net,json
 obc -src examples\jquery_config_https.obs -lib net,json
 
 if [%1] == [server] (
-	obr examples\jquery_config_https
+	obr examples\weather_https
 )
 
 if [%1] == [client] (
-	obc -src examples\client_https.obs -lib net,json
+	obc -src examples\client_https.obs -lib net,json,misc
 	obr examples\client_https
 )

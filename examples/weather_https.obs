@@ -1,0 +1,300 @@
+#~
+To run, specify port, cert, cert_key, cert_key_passwd
+~#
+
+use System.IO.Filesystem;
+use Web.HTTP;
+use System.Time;
+use Collection;
+use Web.HTTP.Server;
+
+class WeatherServer {
+	function : Main(args : String[]) ~ Nil {
+		WebServer->ServeSecure("config/weather_config.json");
+	}
+}
+
+class RequestHandler from HttpsRequestHandler {
+	New() {
+		Parent();
+	}
+	
+	method : ProcessGet(request : Request, response : Response) ~ Bool {
+		return response->HasStaticHandler();
+	}
+
+	method : ProcessPost(request : Request, response : Response) ~ Bool {
+		address := request->GetParam("address");
+		city := request->GetParam("city");
+		state := request->GetParam("state");
+
+		# TODO: sanitize input
+
+		lat_lon := WeatherForcast->FromNet(address, city, state);
+		if(lat_lon <> Nil) {
+			response->SetCodeContent(200, WeatherForcast->FormatHtml(lat_lon));
+		}
+		else {
+			response->SetCodeContent(200, "<html><h2>Unable to find location!</h2><button onclick='history.back()''>Back</button></html>");
+		}
+		return false;
+	}
+}
+
+class WeatherForcast {
+	function : FormatHtml(forcast_data : Tuples.Pair<String, String>) ~ String {
+		daily_data := ParseDailyForcast(forcast_data->GetFirst())
+
+		loc_str := forcast_data->GetSecond();
+		elev_str := daily_data->GetSecond();
+		html := "<html><header><link rel='stylesheet' href='styles.css'></header><body>";
+
+		html += "<h2>";
+		html += loc_str;
+		html += "</h2>"
+		String->SetFloatPrecision(5);
+		html += elev_str->ToString();
+		html += " ft.<p>";
+
+		first := true;
+		html += "<table class='styled-table'><tr><th>Date</th><th>When</th><th>Temperature</th><th>Rain/Snow</th><th>Description</th></tr>";
+		daily_forcasts := daily_data->GetFirst();
+		each(forcast in daily_forcasts) {
+			html += "<tr>"
+			
+			html += "<td>"
+			html += forcast->GetDate();
+			html += "</td>"
+
+			html += "<td><center>"
+			name := forcast->GetName();
+			html += name;
+			if(name->Has("Night")) {
+				html += "<p><img src='images/night.png' width=40px height=40px/></p></center></td>"
+			}
+			else if(first) {
+				html += "<p><img src='images/now.png' width=40px height=40px/></p></center></td>"
+				first := false;
+			}
+			else {
+				html += "<p><img src='images/day.png' width=40px height=40px/></p></center></td>"
+			}
+
+			html += "<td>"
+			html += forcast->GetTemperature();
+			html += "</td>"
+
+			html += "<td>"
+			html += forcast->GetRainSnow();
+			html += "%</td>"
+
+			html += "<td>"
+			html += forcast->GetDescription();
+			html += "</td>"
+
+			html += "</tr>";
+		}
+		html += "</table></p></body></html>";
+
+		return html;
+	}
+
+	function : FromNet(address : String, city : String, state : String) ~ Tuples.Pair<String, String> {
+		forcast_doc : String;
+		loc_str : String;
+
+		lat_lon := GetLatLon(address, city, state);
+		if(lat_lon <> Nil) {
+			lat := lat_lon->GetFirst();
+			lon := lat_lon->GetSecond();
+
+			location := "https://api.weather.gov/points/{$lat},{$lon}"
+			grid_bytes := HttpsClient->QuickGet(Url->New(location))
+			if(grid_bytes <> Nil) {
+				loc_data := ParseLocation(grid_bytes->ToString());
+				forcast_bytes := HttpsClient->QuickGet(Url->New(loc_data->GetThird()))
+				if(forcast_bytes <> Nil) {
+					forcast_doc := forcast_bytes->ToString();
+				}
+			}
+		}
+
+		if(forcast_doc <> Nil & loc_str <> Nil) {
+			return Tuples.Pair->New(forcast_doc, loc_str)<String, String>
+		}
+
+		return Nil
+	}
+
+	function : ParseLocation(location : String) ~ Tuples.Triplet<String, String, String> {
+		parser := Data.JSON.JsonParser->New(location);
+		if(parser->Parse()) {
+			root := parser->GetRoot();
+
+			city := root->FindElements("properties/relativeLocation/properties/city")->GetString();
+			state := root->FindElements("properties/relativeLocation/properties/state")->GetString();
+			forcast_url := root->FindElements("properties/forecast")->GetString();
+
+			return Tuples.Triplet->New(city, state, forcast_url)<String, String, String>;
+		}
+
+		return Nil;
+	}
+
+	function : GetLatLon(address : String, city : String, state : String) ~ Tuples.Pair<FloatRef, FloatRef> {
+		address := Url->Encode(address);
+		city := Url->Encode(city);
+		state := Url->Encode(state);
+
+		url_str := "https://geocoding.geo.census.gov/geocoder/locations/address?street={$address}&city={$city}&state={$state}&benchmark=2020&format=json";
+		geocode_doc := HttpsClient->QuickGet(Url->New(url_str));
+		if(geocode_doc <> Nil) {
+			parser := Data.JSON.JsonParser->New(geocode_doc->ToString());
+			if(parser->Parse()) {
+				address_matches_elm := parser->GetRoot()->FindElements("result/addressMatches");
+				if(address_matches_elm->Size() > 0) {
+					address_match_elm := address_matches_elm->Get(0);
+
+					lat := address_match_elm->FindElements("coordinates/y")->GetString();
+					lon := address_match_elm->FindElements("coordinates/x")->GetString();
+
+					return Tuples.Pair->New(lat->ToFloat(), lon->ToFloat())<FloatRef, FloatRef>;
+				}
+			}
+		}
+
+		return Nil;
+	}
+
+	function : ParseDailyForcast(response : String) ~ Tuples.Pair<Vector<DailyForcast>, FloatRef> {
+		daily_forcasts := Vector->New()<DailyForcast>;
+		elevation : String;
+
+		parser := Data.JSON.JsonParser->New(response);
+		if(parser->Parse()) {
+
+			root := parser->GetRoot();
+			elevation := root->FindElements("properties/elevation/value")->GetString();
+
+			period_elems := root->FindElements("properties/periods");
+			if(period_elems <> Nil) {
+				each(period_elem in period_elems) {
+					name := period_elem->Get("name")->GetString();
+					temperature := period_elem->Get("temperature")->GetString();
+					temperature_unit := period_elem->Get("temperatureUnit")->GetString();
+					description  := period_elem->Get("detailedForecast")->GetString();
+					rain_perc_elem := period_elem->FindElements("probabilityOfPrecipitation/value");
+					start_time := ParseTime(period_elem->Get("startTime")->GetString());
+					end_time := ParseTime(period_elem->Get("endTime")->GetString());
+
+					start_date_str := FormatDate(start_time);
+					
+					start_time_str := FormatHours(start_time);
+					end_time_str := FormatHours(end_time);
+					time_str := "{$start_time_str}-{$end_time_str}";
+
+					temperature += '°';
+					temperature += temperature_unit;
+
+					rain_snow_perc := rain_perc_elem->IsNull() ? "0" : rain_perc_elem->GetString();
+
+					daily_forcasts->AddBack(DailyForcast->New(start_date_str, time_str, name, temperature, rain_snow_perc, description));
+				}
+			}
+		}
+		else {
+			"-- Invalid JSON document --"->ErrorLine()
+		}
+
+		return Tuples.Pair->New(daily_forcasts, elevation->ToFloat())<Vector<DailyForcast>, FloatRef>;
+	}
+
+	function : FormatDate(time : Date) ~ String {
+		day_str := "";
+
+		day_str += time->GetMonth();
+		day_str += '/';
+		day_str += time->GetDay();
+		day_str += '/';
+		day_str += time->GetYear();
+
+		return day_str;
+	}
+
+	function : FormatHours(time : Date) ~ String {
+		time_str := "";
+
+		time_24hr := time->GetHours();
+		if(time_24hr < 12) {
+			time_str += time_24hr;
+			time_str += "AM";
+		}
+		else {
+			time_str += time_24hr - 12;
+			time_str += "PM";
+		}
+
+		return time_str;
+	}
+
+	function : ParseTime(date_str : String) ~ Date {
+		date_str_offset := date_str->FindLast('-');
+		date_substr := date_str->SubString(date_str_offset)
+		return DateUtility->Parse(date_substr, "yyyy-MM-ddThh:mm:ss", false);
+	}
+}
+
+class DailyForcast {
+	@date_str : String;
+	@time_str : String;
+	@name : String;
+	@temp_str : String;
+	@rain_snow_perc : String;
+	@description : String;
+
+	New(date_str : String, time_str : String, name : String, temp_str : String, rain_snow_perc : String, description : String) {
+		@date_str := date_str;
+		@time_str := time_str;
+		@name := name;
+		@temp_str := temp_str;
+		@rain_snow_perc := rain_snow_perc;
+		@description := description;
+	}
+
+	method : public : GetName() ~ String {
+		return @name;
+	}
+
+	method : public : GetTime() ~ String {
+		return @time_str;
+	}
+
+	method : public : GetDate() ~ String {
+		return @date_str;
+	}
+
+	method : public : GetTemperature() ~ String {
+		return @temp_str;
+	}
+
+	method : public : GetRainSnow() ~ String {
+		return @rain_snow_perc;
+	}
+
+	method : public : GetDescription() ~ String {
+		return @description;
+	}
+
+	method : public : ToString() ~ String {
+		buffer := "";
+
+		buffer += "date='{$@date_str}',";
+		buffer += "time='{$@time_str}',";
+		buffer += "name='{$@name}',";
+		buffer += "temperature='{$@temp_str}',";
+		buffer += "rain or snow %='{$@rain_snow_perc}',";
+		buffer += "description='{$@description}'";
+
+		return buffer;
+	}
+}
