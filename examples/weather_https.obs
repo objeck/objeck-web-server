@@ -128,7 +128,7 @@ class WeatherForcast {
 		forcast_doc : String;
 		loc_str : String;
 
-		lat_lon := GetLatLon(address, city, state);
+		lat_lon := Geocode(address, city, state);
 		if(lat_lon <> Nil) {
 			lat := lat_lon->GetFirst();
 			lon := lat_lon->GetSecond();
@@ -169,7 +169,7 @@ class WeatherForcast {
 		return Nil;
 	}
 
-	function : GetLatLon(address : String, city : String, state : String) ~ Tuples.Pair<FloatRef, FloatRef> {
+	function : Geocode(address : String, city : String, state : String) ~ Tuples.Pair<FloatRef, FloatRef> {
 		address := Url->Encode(address);
 		city := Url->Encode(city);
 		state := Url->Encode(state);
@@ -319,8 +319,8 @@ class DailyForcast {
 		buffer += "date='{$@date_str}',";
 		buffer += "time='{$@time_str}',";
 		buffer += "name='{$@name}',";
-		buffer += "temperature='{$@temp_str}',";
-		buffer += "rain or snow %='{$@rain_snow_perc}',";
+		buffer += "temperature={$@temp_str},";
+		buffer += "rain/snow={$@rain_snow_perc},";
 		buffer += "description='{$@description}'";
 
 		return buffer;
