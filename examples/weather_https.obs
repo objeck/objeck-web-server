@@ -28,7 +28,7 @@ class RequestHandler from HttpsRequestHandler {
 		address := request->GetParam("address")->Trim();
 		city := request->GetParam("city")->Trim();
 		state := request->GetParam("state")->Trim();
-		
+
 		# TODO: sanitize input, write routine
 
 		lat_lon := WeatherForcast->FromNet(address, city, state);
@@ -36,7 +36,7 @@ class RequestHandler from HttpsRequestHandler {
 			response->SetCodeContent(200, WeatherForcast->FormatHtml(lat_lon));
 		}
 		else {
-			response->SetCodeContent(200, "<html><h2>Unable to find location!</h2><button onclick='history.back()''>Back</button></html>");
+			response->SetCodeContent(200, "<html><h2>Unable to find location!</h2><button onclick='history.back()'>Back</button></html>");
 		}
 		return false;
 	}
@@ -95,7 +95,7 @@ class WeatherForcast {
 
 			html += "</tr>";
 		}
-		html += "</table></p><button onclick='history.back()''>Back</button></body></html>";
+		html += "</table></p><button onclick='history.back()'>Back</button></body></html>";
 
 		return html;
 	}
