@@ -20,6 +20,44 @@ class RequestHandler from HttpsRequestHandler {
 	}
 	
 	method : ProcessGet(request : Request, response : Response) ~ Bool {
+		path := request->GetPath();
+		query := request->GetQuery();
+		
+		if(path <> Nil & path->EndsWith(".json") & query <> Nil) {
+			tag := request->GetParam("tag");
+			format := request->GetParam("format");
+
+			if(tag <> Nil & tag->Equals("code") & format <> Nil & format->Equals("json")) {
+				buffer := "{
+					\"history\": [
+						{ 
+							\"entry\": {
+								\"address\": \"123 Main St\",
+								\"city\": \"Foo\",
+								\"state\": \"CA\"
+							} 
+						},
+						{ 
+							\"entry\": {
+								\"address\": \"123 Central St\",
+								\"city\": \"Bar\",
+								\"state\": \"OR\"
+							}
+						},
+						{ 
+							\"entry\": {
+								\"address\": \"231 First St\",
+								\"city\": \"Fie\",
+								\"state\": \"CO\"
+							}
+						}]
+				}";
+
+				response->SetCodeTypeContent(200, "application/json", buffer);
+				return false;
+			};
+		};
+
 		return response->HasStaticHandler();
 	}
 

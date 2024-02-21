@@ -1,8 +1,32 @@
 <!DOCTYPE html>
 <html>
 	<head>
+	    <script src="https://code.jquery.com/jquery-latest.js"></script>
 	</head>
+
 	<body>
+		<script>
+		  function check(elem) {
+console.log("call back");      	
+
+		  }
+
+		  $.getJSON(
+		    "/history.json",
+		    {
+		      tag: "code",
+		      format: "json"
+		    },
+		    function(data) {
+		      $.each(data.history, function(i, item) {
+		        $("#history").append('<option value="' + i + '"">' + item.entry.address + '</option>')
+		        if(i == 3) {
+		          return false;
+		      }
+		    });
+		  });
+		</script>
+
 		<h1>Weather - Hello World!</h1>
 
 		<form method='post'>
@@ -73,8 +97,10 @@
 					<option value="WY">Wyoming</option>
 		        </select>
 			</div>
-      
+
 			<input type="submit" name="location" value="Submit"/>
 		</form>
+
+	    <select id="history" name="history"  onChange="check(this);"></select>
 	</body>
 </html>
