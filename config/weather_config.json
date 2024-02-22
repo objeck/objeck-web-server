@@ -2,7 +2,7 @@
 	"network": {
 		"instance": "RequestHandler",
 		"port": 8081,
-		"debug": true,
+		"debug": false,
 		"secure": {
 			"cert_path": "keys/cert.crt",
 			"cert_key_path": "keys/cert.key",

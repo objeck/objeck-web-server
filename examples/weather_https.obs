@@ -193,11 +193,66 @@ class WeatherForcast {
 
 		loc_str := forcast_data->GetSecond();
 		elev_str := daily_data->GetSecond();
+		update_time_str := daily_data->GetThird();
+
+		update_time_half := update_time_str->Split('+');
+   		update_time := ParseTime(update_time_half[0], true);
+
+   		update_str := "";
+
+   		month := update_time->GetMonth();
+   		update_str += month;
+   		update_str += '/';
+
+
+   		day := update_time->GetDay();
+   		update_str += day;
+   		update_str += '/';
+   		
+   		year := update_time->GetYear();
+   		update_str += year;
+   		update_str += " @ ";
+
+   		is_pm := false;
+   		hrs := update_time->GetHours();
+   		if(hrs > 12) {
+   			hrs /= 2;
+   			is_pm := true;
+   		};
+   		update_str += hrs;
+   		
+   		mins := update_time->GetMinutes();
+   		if(mins < 9) {
+   			update_str += ":0{$mins}";
+   		}
+   		else {
+   			update_str += ":{$mins}";
+   		}
+
+   		secs := update_time->GetSeconds();
+   		if(secs < 9) {
+   			update_str += ":0{$secs}";
+   		}
+   		else {
+   			update_str += ":{$secs}";
+   		}
+
+   		if(is_pm) {
+   			update_str += " AM (regional)";
+   		}
+   		else {
+   			update_str += " PM (regional)";
+   		};
+
 		html := "<html><header><link rel='stylesheet' href='styles.css'></header><body>";
 
 		html += "<h2>";
 		html += loc_str;
-		html += "</h2>"
+		html += "</h2><p>"
+				
+		html += update_str;
+		html += " @ ";
+		
 		String->SetFloatPrecision(5);
 		html += elev_str->ToString();
 		html += " ft.<p>";
@@ -315,14 +370,16 @@ class WeatherForcast {
 		return Nil;
 	}
 
-	function : ParseDailyForcast(response : String) ~ Tuples.Pair<Vector<DailyForcast>, FloatRef> {
+	function : ParseDailyForcast(response : String) ~ Tuples.Triplet<Vector<DailyForcast>, FloatRef, String> {
 		daily_forcasts := Vector->New()<DailyForcast>;
 		elevation : String;
+		update_time : String;
 
 		parser := Data.JSON.JsonParser->New(response);
 		if(parser->Parse()) {
 
 			root := parser->GetRoot();
+			update_time := root->FindElements("properties/updated")->GetString();
 			elevation := root->FindElements("properties/elevation/value")->GetString();
 
 			period_elems := root->FindElements("properties/periods");
@@ -355,7 +412,7 @@ class WeatherForcast {
 			"-- Invalid JSON document --"->ErrorLine()
 		}
 
-		return Tuples.Pair->New(daily_forcasts, elevation->ToFloat() * 3.28084)<Vector<DailyForcast>, FloatRef>;
+		return Tuples.Triplet->New(daily_forcasts, elevation->ToFloat() * 3.28084, update_time)<Vector<DailyForcast>, FloatRef, String>;
 	}
 
 	function : FormatDate(time : Date) ~ String {
@@ -386,10 +443,12 @@ class WeatherForcast {
 		return time_str;
 	}
 
-	function : ParseTime(date_str : String) ~ Date {
-		date_str_offset := date_str->FindLast('-');
-		date_substr := date_str->SubString(date_str_offset)
-		return DateUtility->Parse(date_substr, "yyyy-MM-ddThh:mm:ss", false);
+	function : ParseTime(date_str : String, skipped : Bool := false) ~ Date {
+		if(<>skipped) {
+			date_str_offset := date_str->FindLast('-');
+			date_str := date_str->SubString(date_str_offset)
+		}
+		return DateUtility->Parse(date_str, "yyyy-MM-ddThh:mm:ss", false);
 	}
 }
 
