@@ -115,14 +115,14 @@ class RequestHandler from HttpsRequestHandler {
 	function : FormatAddress(input : String) ~ String {
 		buffer := "";
 
-		foo := true;
+		is_space := true;
 		each(i : input) {
-			if(foo) {
+			if(is_space) {
 				buffer->Append(input->Get(i)->ToUpper());
-				foo := false;
+				is_space := false;
 			}
 			else if(input->Get(i) = ' ') {
-				foo := true;
+				is_space := true;
 				buffer->Append(' ');
 			}
 			else {
