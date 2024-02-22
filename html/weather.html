@@ -6,9 +6,8 @@
 
 	<body>
 		<script>
-		  function check(elem) {
-console.log("call back");      	
-
+		  function GetWeather(elem) {
+		  	window.location.href = elem.value;
 		  }
 
 		  $.getJSON(
@@ -19,7 +18,7 @@ console.log("call back");
 		    },
 		    function(data) {
 		      $.each(data.history, function(i, item) {
-		        $("#history").append('<option value="' + i + '"">' + item.entry.address + '</option>')
+		        $("#history").append('<option value="' + item.entry.value + '"">' + item.entry.text + '</option>')
 		        if(i == 3) {
 		          return false;
 		      }
@@ -29,7 +28,7 @@ console.log("call back");
 
 		<h1>Weather - Hello World!</h1>
 
-		<form method='post'>
+		<form action='index.html'>
 			<div>
 				<label for="address">Address</label>
 				<input type="text" id="address" name="address" autocomplete="address" required enterkeyhint="next"></input>
@@ -98,9 +97,9 @@ console.log("call back");
 		        </select>
 			</div>
 
-			<input type="submit" name="location" value="Submit"/>
+			<input type="submit"/>
 		</form>
 
-	    <select id="history" name="history"  onChange="check(this);"></select>
+		<p><select id="history" name="history"  onChange="GetWeather(this);"></select></p>
 	</body>
 </html>

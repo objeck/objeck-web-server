@@ -10,17 +10,113 @@ use Web.HTTP.Server;
 
 class WeatherServer {
 	function : Main(args : String[]) ~ Nil {
+		WeatherForcast->Init();
 		WebServer->ServeSecure("config/weather_config.json");
 	}
 }
 
 class RequestHandler from HttpsRequestHandler {
+
 	New() {
 		Parent();
 	}
 	
 	method : ProcessGet(request : Request, response : Response) ~ Bool {
 		path := request->GetPath();
+				
+		if(path <> Nil) {
+			if(path->EndsWith("/index.html")) {
+				#
+				# weather query, json
+				#	
+				if(request->HasParam("address")) {
+					address := SanitizeInput(request->GetParam("address"));
+					city := SanitizeInput(request->GetParam("city"));
+					state := SanitizeInput(request->GetParam("state"));
+
+					query := "index.html?address";
+					query += address;
+
+					query += "&city=";
+					query += city;
+
+					query += "&state=";
+					query += state;
+
+					WeatherForcast->AddHistory(address, query);
+
+					if(address <> Nil & city <> Nil & state <> Nil) {
+						location := WeatherForcast->Query(address, city, state);
+						if(location <> Nil) {
+							response->SetCodeContent(200, WeatherForcast->FormatResponse(location));
+						}
+						else {
+							response->SetCodeContent(200, "<html><h2>Unable to find location!</h2><button onclick='history.back()'>Back</button></html>");
+						}
+						return false;
+					}
+				};
+			}
+			#
+			# query hisotry, json
+			#
+			else if(path->EndsWith("/history.json")) {
+				tag := request->GetParam("tag");
+				format := request->GetParam("format");
+
+				if(tag <> Nil & tag->Equals("code") & format <> Nil & format->Equals("json")) {
+					buffer := "{
+						\"history\": [
+							{ 
+								\"entry\": {
+									\"text\": \"(None)\",
+									\"value\": \"\"
+								} 
+							}";
+
+					keys_values := WeatherForcast->GetKeyValues()<Pair<String, String>>;
+					if(WeatherForcast->IsEmpty()) {
+						buffer += "
+							]
+						}"
+					}
+					else {
+						buffer += ',';
+
+						each(i : keys_values) {
+							key_value := keys_values->Get(i);
+							key := key_value->GetFirst();
+							value := key_value->GetSecond();							
+
+							buffer += "
+							{
+								\"entry\": {
+									\"text\": \"{$key}\",
+									\"value\": \"{$value}\"
+								}
+							},";
+						};
+						buffer->Pop();
+
+						buffer += "
+							]
+						}"
+					};
+
+"####################"->PrintLine();
+buffer->PrintLine();
+"####################"->PrintLine();
+					
+					response->SetCodeTypeContent(200, "application/json", buffer);
+					return false;
+				};
+
+
+			};
+
+		};
+
+#~
 		query := request->GetQuery();
 		
 		if(path <> Nil & path->EndsWith(".json") & query <> Nil) {
@@ -57,26 +153,21 @@ class RequestHandler from HttpsRequestHandler {
 				return false;
 			};
 		};
+~#
 
+"--- 3 ---"->PrintLine();
 		return response->HasStaticHandler();
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
-		address := SanitizeInput(request->GetParam("address"))
-		city := SanitizeInput(request->GetParam("city"))
-		state := SanitizeInput(request->GetParam("state"))
-
-		location := WeatherForcast->Query(address, city, state);
-		if(location <> Nil) {
-			response->SetCodeContent(200, WeatherForcast->FormatResponse(location));
-		}
-		else {
-			response->SetCodeContent(200, "<html><h2>Unable to find location!</h2><button onclick='history.back()'>Back</button></html>");
-		}
 		return false;
 	}
 
 	method : SanitizeInput(input : String) ~ String {
+		if(input = Nil) {
+			return Nil;
+		};
+
 		output := "";
 		check := input->Trim();
 
@@ -105,6 +196,24 @@ class RequestHandler from HttpsRequestHandler {
 }
 
 class WeatherForcast {
+	@history_cache : static : Collection.Map<String, String>;
+
+	function : Init() ~ Nil {
+		@history_cache := Map->New()<String, String>;
+	}
+
+	function : AddHistory(key : String, value : String) ~ Nil {
+		@history_cache->Insert(key, value);
+	}
+
+	function : GetKeyValues() ~ Vector<Pair<String, String>> {
+		return @history_cache->GetKeyValues();
+	}
+
+	function : IsEmpty() ~ Bool {
+		return @history_cache->IsEmpty();
+	}
+
 	function : FormatResponse(forcast_data : Tuples.Pair<String, String>) ~ String {
 		daily_data := ParseDailyForcast(forcast_data->GetFirst())
 

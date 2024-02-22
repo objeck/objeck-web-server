@@ -13,6 +13,13 @@
 		"common": {
 			"base_dir": null
 		},
+		"default": {
+			"groups": ".html",
+			"alias": "index.html",
+			"mime-type": "text/html",
+			"location": "html/weather.html",
+			"cache": true
+		},
 		"items": [
 			{
 				"groups": ".html",
