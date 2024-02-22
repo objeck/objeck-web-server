@@ -16,11 +16,10 @@ class WeatherServer {
 }
 
 class RequestHandler from HttpsRequestHandler {
-
 	New() {
 		Parent();
 	}
-	
+		
 	method : ProcessGet(request : Request, response : Response) ~ Bool {
 		path := request->GetPath();
 				
@@ -34,16 +33,16 @@ class RequestHandler from HttpsRequestHandler {
 					city := SanitizeInput(request->GetParam("city"));
 					state := SanitizeInput(request->GetParam("state"));
 
-					query := "index.html?address";
-					query += address;
+					query := "index.html?address=";
+					query += Url->Encode(address);
 
 					query += "&city=";
-					query += city;
+					query += Url->Encode(city);
 
 					query += "&state=";
-					query += state;
+					query += Url->Encode(state);
 
-					WeatherForcast->AddHistory(address, query);
+					WeatherForcast->AddHistory(FormatAddress(address), query);
 
 					if(address <> Nil & city <> Nil & state <> Nil) {
 						location := WeatherForcast->Query(address, city, state);
@@ -74,8 +73,8 @@ class RequestHandler from HttpsRequestHandler {
 								} 
 							}";
 
-					keys_values := WeatherForcast->GetKeyValues()<Pair<String, String>>;
-					if(WeatherForcast->IsEmpty()) {
+					keys_values := WeatherForcast->GetHistory()<Pair<String, String>>;
+					if(WeatherForcast->HasHistory()) {
 						buffer += "
 							]
 						}"
@@ -102,61 +101,36 @@ class RequestHandler from HttpsRequestHandler {
 							]
 						}"
 					};
-
-"####################"->PrintLine();
-buffer->PrintLine();
-"####################"->PrintLine();
 					
 					response->SetCodeTypeContent(200, "application/json", buffer);
 					return false;
 				};
-
-
 			};
 
 		};
 
-#~
-		query := request->GetQuery();
-		
-		if(path <> Nil & path->EndsWith(".json") & query <> Nil) {
-			tag := request->GetParam("tag");
-			format := request->GetParam("format");
-
-			if(tag <> Nil & tag->Equals("code") & format <> Nil & format->Equals("json")) {
-				buffer := "{
-					\"history\": [
-						{ 
-							\"entry\": {
-								\"address\": \"123 Main St\",
-								\"city\": \"Foo\",
-								\"state\": \"CA\"
-							} 
-						},
-						{ 
-							\"entry\": {
-								\"address\": \"123 Central St\",
-								\"city\": \"Bar\",
-								\"state\": \"OR\"
-							}
-						},
-						{ 
-							\"entry\": {
-								\"address\": \"231 First St\",
-								\"city\": \"Fie\",
-								\"state\": \"CO\"
-							}
-						}]
-				}";
-
-				response->SetCodeTypeContent(200, "application/json", buffer);
-				return false;
-			};
-		};
-~#
-
-"--- 3 ---"->PrintLine();
 		return response->HasStaticHandler();
+	}
+
+	function : FormatAddress(input : String) ~ String {
+		buffer := "";
+
+		foo := true;
+		each(i : input) {
+			if(foo) {
+				buffer->Append(input->Get(i)->ToUpper());
+				foo := false;
+			}
+			else if(input->Get(i) = ' ') {
+				foo := true;
+				buffer->Append(' ');
+			}
+			else {
+				buffer->Append(input->Get(i));
+			};
+		};
+
+		return buffer;
 	}
 
 	method : ProcessPost(request : Request, response : Response) ~ Bool {
@@ -206,11 +180,11 @@ class WeatherForcast {
 		@history_cache->Insert(key, value);
 	}
 
-	function : GetKeyValues() ~ Vector<Pair<String, String>> {
+	function : GetHistory() ~ Vector<Pair<String, String>> {
 		return @history_cache->GetKeyValues();
 	}
 
-	function : IsEmpty() ~ Bool {
+	function : HasHistory() ~ Bool {
 		return @history_cache->IsEmpty();
 	}
 
