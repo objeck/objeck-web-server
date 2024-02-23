@@ -14,7 +14,6 @@
 			"base_dir": null,
 			"default": {
 				"alias": "index.html",
-				"mime-type": "text/html",
 				"location": "html/index.html",
 				"cache": true
 			}
@@ -22,10 +21,10 @@
 		"groups": [
 			{
 				"group": ".html",
+				"mime-type": "text/html",
 				"items": [
 					{
 						"alias": "index.html",
-						"mime-type": "text/html",
 						"location": "html/weather.html",
 						"cache": true
 					}
@@ -33,10 +32,10 @@
 			},
 			{
 				"group": ".css",
+				"mime-type": "text/css",
 				"items": [
 					{
 						"alias": "styles.css",
-						"mime-type": "text/css",
 						"location": "html/styles.css",
 						"cache": true
 					}
@@ -44,22 +43,20 @@
 			},
 			{
 				"group": ".png",
+				"mime-type": "image/png",
 				"items": [
 					{
 						"alias": "images/day.png",
-						"mime-type": "image/png",
 						"location": "html/images/day.png",
 						"cache": true
 					},
 					{
 						"alias": "images/night.png",
-						"mime-type": "image/png",
 						"location": "html/images/night.png",
 						"cache": true
 					},
 					{
 						"alias": "images/now.png",
-						"mime-type": "image/png",
 						"location": "html/images/now.png",
 						"cache": true
 					}
