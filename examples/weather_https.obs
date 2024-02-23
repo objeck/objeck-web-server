@@ -57,7 +57,7 @@ class RequestHandler from HttpsRequestHandler {
 				};
 			}
 			#
-			# query hisotry, json
+			# query history, json
 			#
 			else if(path->EndsWith("/history.json")) {
 				tag := request->GetParam("tag");
