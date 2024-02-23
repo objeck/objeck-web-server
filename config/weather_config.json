@@ -17,7 +17,7 @@
 			"groups": ".html",
 			"alias": "index.html",
 			"mime-type": "text/html",
-			"location": "html/weather.html",
+			"location": "html/index.html",
 			"cache": true
 		},
 		"items": [
