@@ -22,7 +22,7 @@ class RequestHandler from HttpsRequestHandler {
 		
 	method : ProcessGet(request : Request, response : Response) ~ Bool {
 		path := request->GetPath();
-				
+		
 		if(path <> Nil) {
 			if(path->EndsWith("/index.html")) {
 				#
@@ -200,49 +200,9 @@ class WeatherForcast {
 
    		update_str := "";
 
-   		month := update_time->GetMonth();
-   		update_str += month;
-   		update_str += '/';
-
-
-   		day := update_time->GetDay();
-   		update_str += day;
-   		update_str += '/';
-   		
-   		year := update_time->GetYear();
-   		update_str += year;
+   		update_str += update_time->GetDateString();
    		update_str += " @ ";
-
-   		is_pm := false;
-   		hrs := update_time->GetHours();
-   		if(hrs > 12) {
-   			hrs /= 2;
-   			is_pm := true;
-   		};
-   		update_str += hrs;
-   		
-   		mins := update_time->GetMinutes();
-   		if(mins < 9) {
-   			update_str += ":0{$mins}";
-   		}
-   		else {
-   			update_str += ":{$mins}";
-   		}
-
-   		secs := update_time->GetSeconds();
-   		if(secs < 9) {
-   			update_str += ":0{$secs}";
-   		}
-   		else {
-   			update_str += ":{$secs}";
-   		}
-
-   		if(is_pm) {
-   			update_str += " AM (regional)";
-   		}
-   		else {
-   			update_str += " PM (regional)";
-   		};
+   		update_str += update_time->GetTimeString();
 
 		html := "<html><header><link rel='stylesheet' href='styles.css'></header><body>";
 
