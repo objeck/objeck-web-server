@@ -11,50 +11,59 @@
 	},
 	"files": {
 		"common": {
-			"base_dir": null
-		},
-		"default": {
-			"groups": ".html",
-			"alias": "index.html",
-			"mime-type": "text/html",
-			"location": "html/index.html",
-			"cache": true
-		},
-		"items": [
-			{
-				"groups": ".html",
+			"base_dir": null,
+			"default": {
 				"alias": "index.html",
 				"mime-type": "text/html",
-				"location": "html/weather.html",
+				"location": "html/index.html",
 				"cache": true
+			}
+		},
+		"groups": [
+			{
+				"group": ".html",
+				"items": [
+					{
+						"alias": "index.html",
+						"mime-type": "text/html",
+						"location": "html/weather.html",
+						"cache": true
+					}
+				]
 			},
 			{
-				"groups": ".css",
-				"alias": "styles.css",
-				"mime-type": "text/css",
-				"location": "html/styles.css",
-				"cache": true
+				"group": ".css",
+				"items": [
+					{
+						"alias": "styles.css",
+						"mime-type": "text/css",
+						"location": "html/styles.css",
+						"cache": true
+					}
+				]
 			},
 			{
-				"groups": ".png",
-				"alias": "images/day.png",
-				"mime-type": "image/png",
-				"location": "html/images/day.png",
-				"cache": true
-			},
-			{
-				"groups": ".png",
-				"alias": "images/night.png",
-				"mime-type": "image/png",
-				"location": "html/images/night.png",
-				"cache": true
-			},
-			{
-				"groups": ".png",
-				"alias": "images/now.png",
-				"mime-type": "image/png",
-				"location": "html/images/now.png",
-				"cache": true
+				"group": ".png",
+				"items": [
+					{
+						"alias": "images/day.png",
+						"mime-type": "image/png",
+						"location": "html/images/day.png",
+						"cache": true
+					},
+					{
+						"alias": "images/night.png",
+						"mime-type": "image/png",
+						"location": "html/images/night.png",
+						"cache": true
+					},
+					{
+						"alias": "images/now.png",
+						"mime-type": "image/png",
+						"location": "html/images/now.png",
+						"cache": true
+					}
+				]
 			}
 		]
 	}

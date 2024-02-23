@@ -11,21 +11,41 @@
 	},
 	"files": {
 		"common": {
-			"base_dir": null
-		},
-		"items": [
-			{
-				"groups": ".html",
+			"base_dir": null,
+			"default": {
 				"alias": "index.html",
 				"mime-type": "text/html",
 				"location": "html/index.html",
 				"cache": true
+			}
+		},
+		"types": [
+			{
+				"group": ".html",
+				"files": [
+					{
+						"alias": "index.html",
+						"mime-type": "text/html",
+						"location": "html/index.html",
+						"cache": true
+					},
+					{
+						"alias": "response.html",
+						"mime-type": "text/html",
+						"location": "html/response.html",
+						"cache": true
+					}
+				]
 			},
 			{
-				"groups": ".jpg,.jpeg",
-				"alias": "upload.jpg",
-				"location": "html/upload.jpg",
-				"cache": false
+				"group": ".jpg,.jpeg",
+				"files": [
+					{
+						"alias": "upload.jpg",
+						"location": "html/upload.jpg",
+						"cache": false
+					}
+				]
 			}
 		]
 	}
